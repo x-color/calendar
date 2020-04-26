@@ -69,13 +69,13 @@ func TestNewRouter_Signup(t *testing.T) {
 			r.ServeHTTP(rec, req)
 
 			if rec.Code != tc.code {
-				t.Errorf("want %v but %v", tc.code, rec.Code)
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
 			actual := strings.TrimRight(rec.Body.String(), "\n")
 			expected := string(resBody)
 			if actual != expected {
-				t.Errorf("want %v but %v", expected, actual)
+				t.Errorf("response body: want %v but %v", expected, actual)
 			}
 		})
 	}
