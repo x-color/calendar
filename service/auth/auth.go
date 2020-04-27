@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 	"unicode"
 
-	"github.com/google/uuid"
 	"github.com/x-color/calendar/model/auth"
 	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
@@ -15,6 +15,7 @@ import (
 
 type Repogitory interface {
 	User() UserRepogitory
+	Session() SessionRepogitory
 }
 
 type UserRepogitory interface {
@@ -22,9 +23,17 @@ type UserRepogitory interface {
 	Create(ctx context.Context, user auth.User) error
 }
 
+type SessionRepogitory interface {
+	Find(ctx context.Context, id string) (auth.Session, error)
+	FindByUserID(ctx context.Context, userID string) (auth.Session, error)
+	Create(ctx context.Context, session auth.Session) error
+	Delete(ctx context.Context, id string) error
+}
+
 type Logger interface {
-	Info(id, msg string)
-	Error(id, msg string)
+	Uniq(id string) Logger
+	Info(msg string)
+	Error(msg string)
 }
 
 type Service struct {
@@ -40,13 +49,15 @@ func NewService(repo Repogitory, log Logger) Service {
 }
 
 func (s *Service) Signup(ctx context.Context, name, password string) (auth.User, error) {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
 	user, err := s.signup(ctx, name, password)
 
-	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	if err != nil {
-		s.log.Error(reqID, err.Error())
+		s.log.Error(err.Error())
 	} else {
-		s.log.Info(reqID, fmt.Sprintf("Sign up user(%v)", reqID))
+		s.log.Info(fmt.Sprintf("Sign up user(%v)", name))
 	}
 
 	return user, err
@@ -84,25 +95,64 @@ func (s *Service) signup(ctx context.Context, name, password string) (auth.User,
 	return user, nil
 }
 
-func (s *Service) Signin(ctx context.Context, name, password string) (string, error) {
+func (s *Service) Signin(ctx context.Context, name, password string) (auth.Session, error) {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	session, err := s.signin(ctx, name, password)
+
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Sign in user(%v)", name))
+	}
+
+	return session, err
+}
+
+func (s *Service) signin(ctx context.Context, name, password string) (auth.Session, error) {
 	if err := validateSigninInfo(name, password); err != nil {
-		return "", err
+		return auth.Session{}, err
 	}
 
 	user, err := s.repo.User().FindByName(ctx, name)
 	if errors.Is(err, cerror.ErrNotFound) {
-		return "", nil
-	}
-	if err != nil {
-		return "", err
+		return auth.Session{}, cerror.NewAuthorizationError(
+			err,
+			"user not found",
+		)
+	} else if err != nil {
+		return auth.Session{}, err
 	}
 
 	if err := verifyPassword(user.Password, password); err != nil {
-		return "", nil
+		return auth.Session{}, cerror.NewAuthorizationError(
+			err,
+			"password is not correct",
+		)
 	}
 
-	session := uuid.New().String()
-	// TODO: Store session
+	oldSession, err := s.repo.Session().FindByUserID(ctx, user.ID)
+	if err == nil {
+		if time.Now().After(oldSession.Expires) {
+			s.log.Info(fmt.Sprintf("use already existed session(%v)", oldSession.ID))
+			return oldSession, nil
+		}
+		err = s.repo.Session().Delete(ctx, oldSession.ID)
+		if err != nil {
+			s.log.Error(err.Error())
+		} else {
+			s.log.Info(fmt.Sprintf("use already existed session(%v)", oldSession.ID))
+		}
+	} else if !errors.Is(err, cerror.ErrNotFound) {
+		return auth.Session{}, err
+	}
+
+	session := auth.NewSession(user.ID, time.Now().AddDate(0, 1, 0))
+	err = s.repo.Session().Create(ctx, session)
+	if err != nil {
+		return auth.Session{}, err
+	}
 
 	return session, nil
 }

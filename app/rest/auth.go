@@ -40,7 +40,39 @@ func (e *AuthEndpoint) signupHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *AuthEndpoint) signinHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Sign in!\n"))
+	req := userContent{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(msgContent{"bad contents"})
+		return
+	}
+
+	session, err := e.service.Signin(r.Context(), req.Name, req.Password)
+	if errors.Is(err, cerror.ErrInvalidContent) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(msgContent{"bad contents"})
+		return
+	} else if errors.Is(err, cerror.ErrAuthorization) {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(msgContent{"signin failed"})
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(msgContent{"internal server error"})
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    session.ID,
+		Expires:  session.Expires,
+		Secure:   false, // It should be 'true' if app is not sample.
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	}
+	http.SetCookie(w, cookie)
+
+	json.NewEncoder(w).Encode(msgContent{Msg: "signin"})
 }
 
 func (e *AuthEndpoint) signoutHandler(w http.ResponseWriter, r *http.Request) {

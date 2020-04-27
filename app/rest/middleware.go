@@ -22,7 +22,7 @@ func loggingMiddleware(logger auth.Logger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqID := r.Context().Value(cctx.ReqIDKey).(string)
-			logger.Info(reqID, r.RequestURI)
+			logger.Uniq(reqID).Info(r.RequestURI)
 			next.ServeHTTP(w, r)
 		})
 	}

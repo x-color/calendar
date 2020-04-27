@@ -123,3 +123,33 @@ func NewInternalError(inner error, message string) internalError {
 		inner:   inner,
 	}
 }
+
+// ErrAuthorization is default authorization-error retured
+// when authorization failed.
+var ErrAuthorization = authorizationError{}
+
+type authorizationError struct {
+	message string
+	inner   error
+}
+
+func (e authorizationError) Error() string {
+	return fmt.Sprintf("AuthorizationError: %v", e.message)
+}
+
+func (e authorizationError) Unwrap() error {
+	return e.inner
+}
+
+func (authorizationError) Is(target error) bool {
+	_, ok := target.(authorizationError)
+	return ok
+}
+
+// NewAuthorizationError generates a duplication-error
+func NewAuthorizationError(inner error, message string) authorizationError {
+	return authorizationError{
+		message: message,
+		inner:   inner,
+	}
+}
