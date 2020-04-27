@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/x-color/calendar/logging"
@@ -145,6 +146,81 @@ func TestNewRouter_Signin(t *testing.T) {
 
 			if len(rec.Result().Cookies()) != tc.cookies {
 				t.Errorf("cookies: want %v but %v", expected, actual)
+			}
+		})
+	}
+}
+
+func TestNewRouter_Signout(t *testing.T) {
+	repo := resetRepo()
+	sessionID := uuid.New().String()
+	repo.Session().Create(context.Background(), mauth.Session{
+		ID:      sessionID,
+		UserID:  uuid.New().String(),
+		Expires: time.Now().Add(time.Hour),
+	})
+
+	r := newRouter(resetService(repo))
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		code   int
+		res    map[string]string
+	}{
+		{
+			name:   "no cookie",
+			cookie: nil,
+			code:   http.StatusUnauthorized,
+			res:    map[string]string{"message": "signout failed"},
+		},
+		{
+			name: "invalid cookie",
+			cookie: &http.Cookie{
+				Name:  "session_id",
+				Value: uuid.New().String(),
+			},
+			code: http.StatusUnauthorized,
+			res:  map[string]string{"message": "signout failed"},
+		},
+		{
+			name: "signout",
+			cookie: &http.Cookie{
+				Name:  "session_id",
+				Value: sessionID,
+			},
+			code: http.StatusOK,
+			res:  map[string]string{"message": "signout"},
+		},
+		{
+			name: "second signout",
+			cookie: &http.Cookie{
+				Name:  "session_id",
+				Value: sessionID,
+			},
+			code: http.StatusUnauthorized,
+			res:  map[string]string{"message": "signout failed"},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/auth/signout", nil)
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			actual := strings.TrimRight(rec.Body.String(), "\n")
+			resBody, _ := json.Marshal(tc.res)
+			expected := string(resBody)
+			if actual != expected {
+				t.Errorf("response body: want %v but %v", expected, actual)
 			}
 		})
 	}
