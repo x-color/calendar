@@ -154,3 +154,32 @@ func (s *Service) signin(ctx context.Context, name, password string) (auth.Sessi
 
 	return session, nil
 }
+
+func (s *Service) Signout(ctx context.Context, id string) error {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	err := s.signout(ctx, id)
+
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Sign out session(%v)", id))
+	}
+
+	return err
+}
+
+func (s *Service) signout(ctx context.Context, sessionID string) error {
+	err := s.repo.Session().Delete(ctx, sessionID)
+	if errors.Is(err, cerror.ErrNotFound) {
+		return cerror.NewAuthorizationError(
+			err,
+			fmt.Sprintf("invalid session id(%v)", sessionID),
+		)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -76,5 +76,23 @@ func (e *AuthEndpoint) signinHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *AuthEndpoint) signoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Sign out!\n"))
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(msgContent{"signout failed"})
+		return
+	}
+
+	err = e.service.Signout(r.Context(), cookie.Value)
+	if errors.Is(err, cerror.ErrAuthorization) {
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(msgContent{"signout failed"})
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(msgContent{"internal server error"})
+		return
+	}
+
+	json.NewEncoder(w).Encode(msgContent{Msg: "signout"})
 }
