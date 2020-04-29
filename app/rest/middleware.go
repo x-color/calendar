@@ -40,12 +40,21 @@ func responseHeaderMiddleware(next http.Handler) http.Handler {
 func authorizationMiddleware(service auth.Service) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			isAuth := true // TODO: Use service.Authorize
-			if !isAuth {
+			cookie, err := r.Cookie("session_id")
+			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				json.NewEncoder(w).Encode(msgContent{"unauthorization"})
 				return
 			}
+
+			userID, err := service.Authorize(r.Context(), cookie.Value)
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(msgContent{"unauthorization"})
+				return
+			}
+			ctx := context.WithValue(r.Context(), cctx.UserIDKey, userID)
+			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
 	}

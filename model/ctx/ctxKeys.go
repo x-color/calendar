@@ -3,6 +3,7 @@ package ctx
 type CtxKey string
 
 const (
-	ReqIDKey CtxKey = "reqID"
-	TxKey    CtxKey = "tx"
+	ReqIDKey  CtxKey = "reqID"
+	UserIDKey CtxKey = "userID"
+	TxKey     CtxKey = "tx"
 )

@@ -174,3 +174,39 @@ func (s *Service) signout(ctx context.Context, sessionID string) error {
 
 	return nil
 }
+
+func (s *Service) Authorize(ctx context.Context, id string) (string, error) {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	userID, err := s.authorize(ctx, id)
+
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Authorization user(%v)", userID))
+	}
+
+	return userID, err
+}
+
+func (s *Service) authorize(ctx context.Context, sessionID string) (string, error) {
+	session, err := s.repo.Session().Find(ctx, sessionID)
+	if errors.Is(err, cerror.ErrNotFound) {
+		return "", cerror.NewAuthorizationError(
+			err,
+			fmt.Sprintf("invalid session id(%v)", sessionID),
+		)
+	} else if err != nil {
+		return "", err
+	}
+
+	if time.Now().After(session.Expires) {
+		return "", cerror.NewAuthorizationError(
+			nil,
+			fmt.Sprintf("session(%v) is already expired", session.ID),
+		)
+	}
+
+	return session.UserID, nil
+}
