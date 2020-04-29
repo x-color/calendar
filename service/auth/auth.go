@@ -132,10 +132,6 @@ func (s *Service) signin(ctx context.Context, name, password string) (auth.Sessi
 
 	oldSession, err := s.repo.Session().FindByUserID(ctx, user.ID)
 	if err == nil {
-		if time.Now().After(oldSession.Expires) {
-			s.log.Info(fmt.Sprintf("use already existed session(%v)", oldSession.ID))
-			return oldSession, nil
-		}
 		err = s.repo.Session().Delete(ctx, oldSession.ID)
 		if err != nil {
 			s.log.Error(err.Error())
