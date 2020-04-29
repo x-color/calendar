@@ -243,3 +243,84 @@ func TestNewRouter_Signout(t *testing.T) {
 		})
 	}
 }
+
+func TestNewRouter_MakeCalendar(t *testing.T) {
+	authRepo := newAuthRepo()
+	sessionID := uuid.New().String()
+	authRepo.Session().Create(context.Background(), mauth.Session{
+		ID:      sessionID,
+		UserID:  uuid.New().String(),
+		Expires: time.Now().Add(time.Hour),
+	})
+	calRepo := newCalRepo()
+
+	l := newLogger()
+	as := auth.NewService(authRepo, l)
+	cs := calendar.NewService(calRepo, l)
+	r := newRouter(as, cs, l)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		body   map[string]interface{}
+		code   int
+		res    map[string]interface{}
+	}{
+		{
+			name:   "no cookie",
+			cookie: nil,
+			body:   map[string]interface{}{"name": "My plans", "color": "red"},
+			code:   http.StatusUnauthorized,
+			res:    map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid cookie",
+			cookie: &http.Cookie{Name: "session_id", Value: uuid.New().String()},
+			body:   map[string]interface{}{"name": "My plans", "color": "red"},
+			code:   http.StatusUnauthorized,
+			res:    map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid contents",
+			cookie: &cookie,
+			body:   map[string]interface{}{"name": "", "color": ""},
+			code:   http.StatusBadRequest,
+			res:    map[string]interface{}{"message": "bad contents"},
+		},
+		{
+			name:   "make calendar",
+			cookie: &cookie,
+			body:   map[string]interface{}{"name": "My plans", "color": "red"},
+			code:   http.StatusOK,
+			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "private": true},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			body, _ := json.Marshal(tc.body)
+			req := httptest.NewRequest(http.MethodPost, "/calendars", bytes.NewBuffer(body))
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			actual := strings.TrimRight(rec.Body.String(), "\n")
+			resBody, _ := json.Marshal(tc.res)
+			expected := string(resBody)
+			if actual != expected {
+				t.Errorf("response body: want %v but %v", expected, actual)
+			}
+		})
+	}
+}
