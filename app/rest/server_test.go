@@ -17,21 +17,34 @@ import (
 	"github.com/x-color/calendar/repogitory/inmem"
 	"github.com/x-color/calendar/service"
 	"github.com/x-color/calendar/service/auth"
+	"github.com/x-color/calendar/service/calendar"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func resetRepo() auth.Repogitory {
+func newAuthRepo() auth.Repogitory {
 	r := inmem.NewRepogitory()
 	return &r
 }
 
-func resetService(r auth.Repogitory) (auth.Service, service.Logger) {
+func newCalRepo() calendar.Repogitory {
+	r := inmem.NewRepogitory()
+	return &r
+}
+
+func newLogger() service.Logger {
 	l := logging.NewLogger(ioutil.Discard)
-	return auth.NewService(r, &l), &l
+	return &l
+}
+
+func dummyCalService() calendar.Service {
+	return calendar.Service{}
 }
 
 func TestNewRouter_Signup(t *testing.T) {
-	r := newRouter(resetService(resetRepo()))
+	repo := newAuthRepo()
+	l := newLogger()
+	as := auth.NewService(repo, l)
+	r := newRouter(as, dummyCalService(), l)
 
 	testcases := []struct {
 		name string
@@ -88,7 +101,7 @@ func TestNewRouter_Signup(t *testing.T) {
 }
 
 func TestNewRouter_Signin(t *testing.T) {
-	repo := resetRepo()
+	repo := newAuthRepo()
 	pwd, _ := bcrypt.GenerateFromPassword([]byte("P@ssw0rd"), bcrypt.DefaultCost)
 	repo.User().Create(context.Background(), mauth.User{
 		ID:       uuid.New().String(),
@@ -96,7 +109,9 @@ func TestNewRouter_Signin(t *testing.T) {
 		Password: string(pwd),
 	})
 
-	r := newRouter(resetService(repo))
+	l := newLogger()
+	as := auth.NewService(repo, l)
+	r := newRouter(as, dummyCalService(), l)
 
 	testcases := []struct {
 		name    string
@@ -153,7 +168,7 @@ func TestNewRouter_Signin(t *testing.T) {
 }
 
 func TestNewRouter_Signout(t *testing.T) {
-	repo := resetRepo()
+	repo := newAuthRepo()
 	sessionID := uuid.New().String()
 	repo.Session().Create(context.Background(), mauth.Session{
 		ID:      sessionID,
@@ -161,7 +176,9 @@ func TestNewRouter_Signout(t *testing.T) {
 		Expires: time.Now().Add(time.Hour),
 	})
 
-	r := newRouter(resetService(repo))
+	l := newLogger()
+	as := auth.NewService(repo, l)
+	r := newRouter(as, dummyCalService(), l)
 
 	testcases := []struct {
 		name   string
