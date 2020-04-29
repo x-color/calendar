@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -33,4 +34,18 @@ func responseHeaderMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func authorizationMiddleware(service auth.Service) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			isAuth := true // TODO: Use service.Authorize
+			if !isAuth {
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(msgContent{"unauthorization"})
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

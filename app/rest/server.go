@@ -21,8 +21,11 @@ func StartServer(s auth.Service, l auth.Logger) {
 	http.ListenAndServe(":8080", r)
 }
 
-func newRouter(s auth.Service, l auth.Logger) *mux.Router {
-	e := AuthEndpoint{s}
+func newRouter(as auth.Service, l auth.Logger) *mux.Router {
+	ae := AuthEndpoint{as}
+	ce := CalEndpoint{
+		// TODO: calendar.Service
+	}
 
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.NotFoundHandler()
@@ -30,10 +33,17 @@ func newRouter(s auth.Service, l auth.Logger) *mux.Router {
 	r.Use(loggingMiddleware(l))
 	r.Use(responseHeaderMiddleware)
 
-	sr := r.PathPrefix("/auth").Subrouter()
-	sr.HandleFunc("/signup", e.signupHandler).Methods(http.MethodPost)
-	sr.HandleFunc("/signin", e.signinHandler)
-	sr.HandleFunc("/signout", e.signoutHandler)
+	ar := r.PathPrefix("/auth").Subrouter()
+	ar.HandleFunc("/signup", ae.signupHandler).Methods(http.MethodPost)
+	ar.HandleFunc("/signin", ae.signinHandler)
+	ar.HandleFunc("/signout", ae.signoutHandler)
+
+	cr := r.PathPrefix("/calendars").Subrouter()
+	cr.Use(authorizationMiddleware(as))
+	cr.HandleFunc("", ce.getCalendarsHandler).Methods(http.MethodGet)
+	cr.HandleFunc("", ce.makeCalendarHandler).Methods(http.MethodPost)
+	cr.HandleFunc("/{id}", ce.removeCalendarHandler).Methods(http.MethodDelete)
+	cr.HandleFunc("/{id}", ce.changeCalendarHandler).Methods(http.MethodPost)
 
 	return r
 }
