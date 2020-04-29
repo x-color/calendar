@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	cctx "github.com/x-color/calendar/model/ctx"
+	"github.com/x-color/calendar/service"
 	"github.com/x-color/calendar/service/auth"
 )
 
@@ -19,7 +20,7 @@ func reqIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func loggingMiddleware(logger auth.Logger) mux.MiddlewareFunc {
+func loggingMiddleware(logger service.Logger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqID := r.Context().Value(cctx.ReqIDKey).(string)

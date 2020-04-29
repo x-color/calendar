@@ -1,15 +1,18 @@
 package calendar
 
-type Repogitory interface {
-}
+import "github.com/x-color/calendar/service"
 
-type Logger interface {
-	Uniq(id string) Logger
-	Info(msg string)
-	Error(msg string)
+type Repogitory interface {
 }
 
 type Service struct {
 	repo Repogitory
-	log  Logger
+	log  service.Logger
+}
+
+func NewService(repo Repogitory, log service.Logger) Service {
+	return Service{
+		repo: repo,
+		log:  log,
+	}
 }

@@ -12,6 +12,6 @@ import (
 func main() {
 	l := logging.NewLogger(os.Stdout)
 	r := inmem.NewRepogitory()
-	s := auth.NewService(&r, &l)
-	rest.StartServer(s, &l)
+	as := auth.NewService(&r, &l)
+	rest.StartServer(as, &l)
 }

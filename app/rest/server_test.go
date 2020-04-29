@@ -15,6 +15,7 @@ import (
 	"github.com/x-color/calendar/logging"
 	mauth "github.com/x-color/calendar/model/auth"
 	"github.com/x-color/calendar/repogitory/inmem"
+	"github.com/x-color/calendar/service"
 	"github.com/x-color/calendar/service/auth"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -24,7 +25,7 @@ func resetRepo() auth.Repogitory {
 	return &r
 }
 
-func resetService(r auth.Repogitory) (auth.Service, auth.Logger) {
+func resetService(r auth.Repogitory) (auth.Service, service.Logger) {
 	l := logging.NewLogger(ioutil.Discard)
 	return auth.NewService(r, &l), &l
 }

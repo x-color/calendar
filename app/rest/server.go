@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/x-color/calendar/service"
 	"github.com/x-color/calendar/service/auth"
 )
 
@@ -16,12 +17,12 @@ type msgContent struct {
 	Msg string `json:"message"`
 }
 
-func StartServer(s auth.Service, l auth.Logger) {
-	r := newRouter(s, l)
+func StartServer(as auth.Service, l service.Logger) {
+	r := newRouter(as, l)
 	http.ListenAndServe(":8080", r)
 }
 
-func newRouter(as auth.Service, l auth.Logger) *mux.Router {
+func newRouter(as auth.Service, l service.Logger) *mux.Router {
 	ae := AuthEndpoint{as}
 	ce := CalEndpoint{
 		// TODO: calendar.Service

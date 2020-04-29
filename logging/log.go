@@ -5,7 +5,7 @@ import (
 
 	"log"
 
-	"github.com/x-color/calendar/service/auth"
+	"github.com/x-color/calendar/service"
 )
 
 type logger struct {
@@ -13,7 +13,7 @@ type logger struct {
 	uid string
 }
 
-func (l *logger) Uniq(id string) auth.Logger {
+func (l *logger) Uniq(id string) service.Logger {
 	return &logger{
 		l:   l.l,
 		uid: id,

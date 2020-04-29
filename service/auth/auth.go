@@ -9,6 +9,7 @@ import (
 	"github.com/x-color/calendar/model/auth"
 	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
+	"github.com/x-color/calendar/service"
 )
 
 type Repogitory interface {
@@ -28,18 +29,12 @@ type SessionRepogitory interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type Logger interface {
-	Uniq(id string) Logger
-	Info(msg string)
-	Error(msg string)
-}
-
 type Service struct {
 	repo Repogitory
-	log  Logger
+	log  service.Logger
 }
 
-func NewService(repo Repogitory, log Logger) Service {
+func NewService(repo Repogitory, log service.Logger) Service {
 	return Service{
 		repo: repo,
 		log:  log,
