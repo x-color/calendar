@@ -43,7 +43,7 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 	cr.HandleFunc("", ce.getCalendarsHandler).Methods(http.MethodGet)
 	cr.HandleFunc("", ce.makeCalendarHandler).Methods(http.MethodPost)
 	cr.HandleFunc("/{id}", ce.removeCalendarHandler).Methods(http.MethodDelete)
-	cr.HandleFunc("/{id}", ce.changeCalendarHandler).Methods(http.MethodPost)
+	cr.HandleFunc("/{id}", ce.changeCalendarHandler).Methods(http.MethodPatch)
 
 	return r
 }
