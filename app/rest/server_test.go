@@ -349,8 +349,10 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 func TestNewRouter_RemoveCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
+	otherID := uuid.New().String()
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
+	otherCalID := uuid.New().String()
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
 		ID:      calendarID,
 		Name:    "My plans",
@@ -359,6 +361,15 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 		Private: true,
 		Plans:   []calendar.Plan{},
 		Shares:  []string{userID},
+	})
+	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+		ID:      otherCalID,
+		Name:    "Work plans",
+		UserID:  otherID,
+		Color:   calendar.YELLOW,
+		Private: false,
+		Plans:   []calendar.Plan{},
+		Shares:  []string{otherID, userID},
 	})
 
 	l := newLogger()
@@ -400,16 +411,30 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 			res:    map[string]interface{}{"message": "not found"},
 		},
 		{
-			name:   "remove calendar",
+			name:   "remove my calendar",
 			cookie: &cookie,
 			calID:  calendarID,
 			code:   http.StatusOK,
 			res:    map[string]interface{}{"message": "remove calendar"},
 		},
 		{
-			name:   "second remove calendar",
+			name:   "second remove my calendar",
 			cookie: &cookie,
 			calID:  calendarID,
+			code:   http.StatusNotFound,
+			res:    map[string]interface{}{"message": "not found"},
+		},
+		{
+			name:   "remove other's calendar",
+			cookie: &cookie,
+			calID:  otherCalID,
+			code:   http.StatusOK,
+			res:    map[string]interface{}{"message": "remove calendar"},
+		},
+		{
+			name:   "second remove other's calendar",
+			cookie: &cookie,
+			calID:  otherCalID,
 			code:   http.StatusNotFound,
 			res:    map[string]interface{}{"message": "not found"},
 		},
