@@ -41,6 +41,17 @@ func dummyCalService() calendar.Service {
 	return calendar.Service{}
 }
 
+func makeSession(authRepo auth.Repogitory) (string, string) {
+	userID := uuid.New().String()
+	sessionID := uuid.New().String()
+	authRepo.Session().Create(context.Background(), mauth.Session{
+		ID:      sessionID,
+		UserID:  userID,
+		Expires: time.Now().Add(time.Hour),
+	})
+	return userID, sessionID
+}
+
 func ignoreKey(key string) cmp.Option {
 	return cmpopts.IgnoreMapEntries(func(k string, t interface{}) bool {
 		return k == key
@@ -182,12 +193,7 @@ func TestNewRouter_Signin(t *testing.T) {
 
 func TestNewRouter_Signout(t *testing.T) {
 	repo := newAuthRepo()
-	sessionID := uuid.New().String()
-	repo.Session().Create(context.Background(), mauth.Session{
-		ID:      sessionID,
-		UserID:  uuid.New().String(),
-		Expires: time.Now().Add(time.Hour),
-	})
+	_, sessionID := makeSession(repo)
 
 	l := newLogger()
 	as := auth.NewService(repo, l)
@@ -262,13 +268,7 @@ func TestNewRouter_Signout(t *testing.T) {
 
 func TestNewRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
-	userID := uuid.New().String()
-	sessionID := uuid.New().String()
-	authRepo.Session().Create(context.Background(), mauth.Session{
-		ID:      sessionID,
-		UserID:  userID,
-		Expires: time.Now().Add(time.Hour),
-	})
+	userID, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
 
 	l := newLogger()
