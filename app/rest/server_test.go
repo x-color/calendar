@@ -297,7 +297,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "private": true},
+			res:    map[string]interface{}{"id": "REPLACE_ID", "name": "My plans", "color": "red", "private": true, "shares": []string{"REPLACE_ID"}, "plans": []string{}},
 		},
 	}
 
@@ -315,9 +315,18 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
+			var bj map[string]interface{}
+			if err := json.Unmarshal(bytes.TrimSpace(rec.Body.Bytes()), &bj); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+
 			actual := strings.TrimRight(rec.Body.String(), "\n")
 			resBody, _ := json.Marshal(tc.res)
-			expected := string(resBody)
+			id := "nil"
+			if v, ok := bj["id"]; ok {
+				id = v.(string)
+			}
+			expected := strings.Replace(string(resBody), "REPLACE_ID", id, -1)
 			if actual != expected {
 				t.Errorf("response body: want %v but %v", expected, actual)
 			}
