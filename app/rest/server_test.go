@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/x-color/calendar/logging"
 	mauth "github.com/x-color/calendar/model/auth"
@@ -38,6 +40,12 @@ func newLogger() service.Logger {
 
 func dummyCalService() calendar.Service {
 	return calendar.Service{}
+}
+
+func ignoreKey(key string) cmp.Option {
+	return cmpopts.IgnoreMapEntries(func(k string, t interface{}) bool {
+		return k == key
+	})
 }
 
 func TestNewRouter_Signup(t *testing.T) {
@@ -246,10 +254,11 @@ func TestNewRouter_Signout(t *testing.T) {
 
 func TestNewRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
+	userID := uuid.New().String()
 	sessionID := uuid.New().String()
 	authRepo.Session().Create(context.Background(), mauth.Session{
 		ID:      sessionID,
-		UserID:  uuid.New().String(),
+		UserID:  userID,
 		Expires: time.Now().Add(time.Hour),
 	})
 	calRepo := newCalRepo()
@@ -297,7 +306,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "REPLACE_ID", "name": "My plans", "color": "red", "private": true, "shares": []string{"REPLACE_ID"}, "plans": []string{}},
+			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "private": true, "shares": []interface{}{userID}, "plans": []interface{}{}},
 		},
 	}
 
@@ -315,20 +324,14 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			var bj map[string]interface{}
-			if err := json.Unmarshal(bytes.TrimSpace(rec.Body.Bytes()), &bj); err != nil {
+			var actual map[string]interface{}
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
 				t.Errorf("invalid response body: %v", rec.Body.String())
 			}
+			expected := tc.res
 
-			actual := strings.TrimSpace(rec.Body.String())
-			resBody, _ := json.Marshal(tc.res)
-			id := "nil"
-			if v, ok := bj["id"]; ok {
-				id = v.(string)
-			}
-			expected := strings.Replace(string(resBody), "REPLACE_ID", id, -1)
-			if actual != expected {
-				t.Errorf("response body: want %v but %v", expected, actual)
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
