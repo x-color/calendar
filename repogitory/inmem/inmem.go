@@ -4,20 +4,27 @@ import (
 	"sync"
 
 	"github.com/x-color/calendar/model/auth"
-	service "github.com/x-color/calendar/service/auth"
+	"github.com/x-color/calendar/model/calendar"
+	as "github.com/x-color/calendar/service/auth"
+	cs "github.com/x-color/calendar/service/calendar"
 )
 
 type inmem struct {
-	userRepo    userRepo
-	sessionRepo sessionRepo
+	userRepo     userRepo
+	sessionRepo  sessionRepo
+	calendarRepo calendarRepo
 }
 
-func (m *inmem) User() service.UserRepogitory {
+func (m *inmem) User() as.UserRepogitory {
 	return &m.userRepo
 }
 
-func (m *inmem) Session() service.SessionRepogitory {
+func (m *inmem) Session() as.SessionRepogitory {
 	return &m.sessionRepo
+}
+
+func (m *inmem) Calendar() cs.CalendarRepogitory {
+	return &m.calendarRepo
 }
 
 func NewRepogitory() inmem {
@@ -29,8 +36,13 @@ func NewRepogitory() inmem {
 		m:        sync.RWMutex{},
 		sessions: []auth.Session{},
 	}
+	c := calendarRepo{
+		m:         sync.RWMutex{},
+		calendars: []calendar.Calendar{},
+	}
 	return inmem{
-		userRepo:    u,
-		sessionRepo: s,
+		userRepo:     u,
+		sessionRepo:  s,
+		calendarRepo: c,
 	}
 }
