@@ -91,7 +91,7 @@ func TestNewRouter_Signup(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			actual := strings.TrimRight(rec.Body.String(), "\n")
+			actual := strings.TrimSpace(rec.Body.String())
 			expected := string(resBody)
 			if actual != expected {
 				t.Errorf("response body: want %v but %v", expected, actual)
@@ -154,7 +154,7 @@ func TestNewRouter_Signin(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			actual := strings.TrimRight(rec.Body.String(), "\n")
+			actual := strings.TrimSpace(rec.Body.String())
 			expected := string(resBody)
 			if actual != expected {
 				t.Errorf("response body: want %v but %v", expected, actual)
@@ -234,7 +234,7 @@ func TestNewRouter_Signout(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			actual := strings.TrimRight(rec.Body.String(), "\n")
+			actual := strings.TrimSpace(rec.Body.String())
 			resBody, _ := json.Marshal(tc.res)
 			expected := string(resBody)
 			if actual != expected {
@@ -320,7 +320,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 				t.Errorf("invalid response body: %v", rec.Body.String())
 			}
 
-			actual := strings.TrimRight(rec.Body.String(), "\n")
+			actual := strings.TrimSpace(rec.Body.String())
 			resBody, _ := json.Marshal(tc.res)
 			id := "nil"
 			if v, ok := bj["id"]; ok {
