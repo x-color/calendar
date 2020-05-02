@@ -15,19 +15,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/x-color/calendar/logging"
 	mauth "github.com/x-color/calendar/model/auth"
+	"github.com/x-color/calendar/model/calendar"
 	"github.com/x-color/calendar/repogitory/inmem"
 	"github.com/x-color/calendar/service"
-	"github.com/x-color/calendar/service/auth"
-	"github.com/x-color/calendar/service/calendar"
+	as "github.com/x-color/calendar/service/auth"
+	cs "github.com/x-color/calendar/service/calendar"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func newAuthRepo() auth.Repogitory {
+func newAuthRepo() as.Repogitory {
 	r := inmem.NewRepogitory()
 	return &r
 }
 
-func newCalRepo() calendar.Repogitory {
+func newCalRepo() cs.Repogitory {
 	r := inmem.NewRepogitory()
 	return &r
 }
@@ -37,11 +38,11 @@ func newLogger() service.Logger {
 	return &l
 }
 
-func dummyCalService() calendar.Service {
-	return calendar.Service{}
+func dummyCalService() cs.Service {
+	return cs.Service{}
 }
 
-func makeSession(authRepo auth.Repogitory) (string, string) {
+func makeSession(authRepo as.Repogitory) (string, string) {
 	userID := uuid.New().String()
 	sessionID := uuid.New().String()
 	authRepo.Session().Create(context.Background(), mauth.Session{
@@ -61,7 +62,7 @@ func ignoreKey(key string) cmp.Option {
 func TestNewRouter_Signup(t *testing.T) {
 	repo := newAuthRepo()
 	l := newLogger()
-	as := auth.NewService(repo, l)
+	as := as.NewService(repo, l)
 	r := newRouter(as, dummyCalService(), l)
 
 	testcases := []struct {
@@ -131,7 +132,7 @@ func TestNewRouter_Signin(t *testing.T) {
 	})
 
 	l := newLogger()
-	as := auth.NewService(repo, l)
+	as := as.NewService(repo, l)
 	r := newRouter(as, dummyCalService(), l)
 
 	testcases := []struct {
@@ -196,7 +197,7 @@ func TestNewRouter_Signout(t *testing.T) {
 	_, sessionID := makeSession(repo)
 
 	l := newLogger()
-	as := auth.NewService(repo, l)
+	as := as.NewService(repo, l)
 	r := newRouter(as, dummyCalService(), l)
 
 	testcases := []struct {
@@ -272,8 +273,8 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 
 	l := newLogger()
-	as := auth.NewService(authRepo, l)
-	cs := calendar.NewService(calRepo, l)
+	as := as.NewService(authRepo, l)
+	cs := cs.NewService(calRepo, l)
 	r := newRouter(as, cs, l)
 
 	cookie := http.Cookie{
@@ -322,6 +323,101 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			body, _ := json.Marshal(tc.body)
 			req := httptest.NewRequest(http.MethodPost, "/calendars", bytes.NewBuffer(body))
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			var actual map[string]interface{}
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
+			}
+		})
+	}
+}
+
+func TestNewRouter_RemoveCalendar(t *testing.T) {
+	authRepo := newAuthRepo()
+	userID, sessionID := makeSession(authRepo)
+	calRepo := newCalRepo()
+	calendarID := uuid.New().String()
+	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+		ID:      calendarID,
+		Name:    "My plans",
+		UserID:  userID,
+		Color:   calendar.RED,
+		Private: true,
+		Plans:   []calendar.Plan{},
+		Shares:  []string{userID},
+	})
+
+	l := newLogger()
+	as := as.NewService(authRepo, l)
+	cs := cs.NewService(calRepo, l)
+	r := newRouter(as, cs, l)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		calID  string
+		code   int
+		res    map[string]interface{}
+	}{
+		{
+			name:   "no cookie",
+			cookie: nil,
+			calID:  calendarID,
+			code:   http.StatusUnauthorized,
+			res:    map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid cookie",
+			cookie: &http.Cookie{Name: "session_id", Value: uuid.New().String()},
+			calID:  calendarID,
+			code:   http.StatusUnauthorized,
+			res:    map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid calendar id",
+			cookie: &cookie,
+			calID:  uuid.New().String(),
+			code:   http.StatusNotFound,
+			res:    map[string]interface{}{"message": "not found"},
+		},
+		{
+			name:   "remove calendar",
+			cookie: &cookie,
+			calID:  calendarID,
+			code:   http.StatusOK,
+			res:    map[string]interface{}{"message": "remove calendar"},
+		},
+		{
+			name:   "second remove calendar",
+			cookie: &cookie,
+			calID:  calendarID,
+			code:   http.StatusNotFound,
+			res:    map[string]interface{}{"message": "not found"},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodDelete, "/calendars/"+tc.calID, nil)
 			if tc.cookie != nil {
 				req.AddCookie(tc.cookie)
 			}
