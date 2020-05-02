@@ -66,6 +66,7 @@ func (e *AuthEndpoint) signinHandler(w http.ResponseWriter, r *http.Request) {
 		Name:     "session_id",
 		Value:    session.ID,
 		Expires:  session.Expires,
+		Path:     "/",
 		Secure:   false, // It should be 'true' if app is not sample.
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
