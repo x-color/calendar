@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	cerror "github.com/x-color/calendar/model/error"
 	"github.com/x-color/calendar/service/calendar"
 )
@@ -61,6 +62,22 @@ func (e *CalEndpoint) makeCalendarHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (e *CalEndpoint) removeCalendarHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	err := e.service.RemoveCalendar(r.Context(), vars["id"])
+	if errors.Is(err, cerror.ErrInvalidContent) || errors.Is(err, cerror.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(msgContent{"not found"})
+		return
+	} else if errors.Is(err, cerror.ErrAuthorization) {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(msgContent{"unauthorization"})
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(msgContent{"internal server error"})
+		return
+	}
+
 	json.NewEncoder(w).Encode(msgContent{"remove calendar"})
 }
 
