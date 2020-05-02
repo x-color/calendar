@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -89,7 +88,6 @@ func TestNewRouter_Signup(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			body, _ := json.Marshal(tc.body)
-			resBody, _ := json.Marshal(tc.res)
 
 			req := httptest.NewRequest(http.MethodPost, "/auth/signup", bytes.NewBuffer(body))
 			rec := httptest.NewRecorder()
@@ -99,10 +97,14 @@ func TestNewRouter_Signup(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			actual := strings.TrimSpace(rec.Body.String())
-			expected := string(resBody)
-			if actual != expected {
-				t.Errorf("response body: want %v but %v", expected, actual)
+			var actual map[string]string
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
@@ -152,7 +154,6 @@ func TestNewRouter_Signin(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			body, _ := json.Marshal(tc.body)
-			resBody, _ := json.Marshal(tc.res)
 
 			req := httptest.NewRequest(http.MethodPost, "/auth/signin", bytes.NewBuffer(body))
 			rec := httptest.NewRecorder()
@@ -162,10 +163,14 @@ func TestNewRouter_Signin(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			actual := strings.TrimSpace(rec.Body.String())
-			expected := string(resBody)
-			if actual != expected {
-				t.Errorf("response body: want %v but %v", expected, actual)
+			var actual map[string]string
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
 			}
 
 			if len(rec.Result().Cookies()) != tc.cookies {
@@ -242,11 +247,14 @@ func TestNewRouter_Signout(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			actual := strings.TrimSpace(rec.Body.String())
-			resBody, _ := json.Marshal(tc.res)
-			expected := string(resBody)
-			if actual != expected {
-				t.Errorf("response body: want %v but %v", expected, actual)
+			var actual map[string]string
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
