@@ -432,11 +432,11 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 			res:    map[string]interface{}{"message": "remove calendar"},
 		},
 		{
-			name:   "second remove other's calendar",
+			name:   "remove not shared calendar",
 			cookie: &cookie,
 			calID:  otherCalID,
-			code:   http.StatusNotFound,
-			res:    map[string]interface{}{"message": "not found"},
+			code:   http.StatusForbidden,
+			res:    map[string]interface{}{"message": "unauthorization"},
 		},
 	}
 
