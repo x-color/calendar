@@ -581,3 +581,210 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 		})
 	}
 }
+
+func TestNewRouter_Shedule(t *testing.T) {
+	authRepo := newAuthRepo()
+	userID, sessionID := makeSession(authRepo)
+	otherID := uuid.New().String()
+	calRepo := newCalRepo()
+	calendarID := uuid.New().String()
+	otherCalendarID := uuid.New().String()
+	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+		ID:     calendarID,
+		Name:   "My plans",
+		UserID: userID,
+		Color:  calendar.RED,
+		Plans:  []calendar.Plan{},
+		Shares: []string{userID},
+	})
+	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+		ID:     otherCalendarID,
+		Name:   "My plans",
+		UserID: otherID,
+		Color:  calendar.RED,
+		Plans:  []calendar.Plan{},
+		Shares: []string{otherID, userID},
+	})
+	l := newLogger()
+	as := as.NewService(authRepo, l)
+	cs := cs.NewService(calRepo, l)
+	r := newRouter(as, cs, l)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		body   map[string]interface{}
+		code   int
+		res    map[string]interface{}
+	}{
+		{
+			name:   "no cookie",
+			cookie: nil,
+			body: map[string]interface{}{
+				"calendar_id": calendarID,
+				"name":        "plan",
+				"shares":      []interface{}{userID},
+				"is_all_day":  true,
+			},
+			code: http.StatusUnauthorized,
+			res:  map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid cookie",
+			cookie: &http.Cookie{Name: "session_id", Value: uuid.New().String()},
+			body: map[string]interface{}{
+				"calendar_id": calendarID,
+				"name":        "plan",
+				"shares":      []interface{}{userID},
+				"is_all_day":  true,
+			},
+			code: http.StatusUnauthorized,
+			res:  map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid calendar",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": uuid.New().String(),
+				"name":        "plan",
+				"shares":      []interface{}{userID},
+				"is_all_day":  true,
+			},
+			code: http.StatusNotFound,
+			res:  map[string]interface{}{"message": "not found"},
+		},
+		{
+			name:   "do not permit to access calendar",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": otherCalendarID,
+				"name":        "plan",
+				"shares":      []interface{}{userID},
+				"is_all_day":  true,
+			},
+			code: http.StatusNotFound,
+			res:  map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid content",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": calendarID,
+				"shares":      []interface{}{userID},
+				"is_all_day":  true,
+			},
+			code: http.StatusBadRequest,
+			res:  map[string]interface{}{"message": "bad contents"},
+		},
+		{
+			name:   "shedule plan",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": calendarID,
+				"name":        "plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{userID, otherID},
+				"begin":       "1577836800",
+				"end":         "1577869200",
+			},
+			code: http.StatusOK,
+			res: map[string]interface{}{
+				"id":          "",
+				"calendar_id": calendarID,
+				"name":        "plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{userID, otherID},
+				"is_all_day":  false,
+				"begin":       "1577836800",
+				"end":         "1577869200",
+			},
+		},
+		{
+			name:   "shedule all day plan",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": calendarID,
+				"name":        "all day plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{userID},
+				"is_all_day":  true,
+			},
+			code: http.StatusOK,
+			res: map[string]interface{}{
+				"id":          "",
+				"calendar_id": calendarID,
+				"name":        "all day plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{userID, otherID},
+				"is_all_day":  true,
+				"begin":       "",
+				"end":         "",
+			},
+		},
+		{
+			name:   "shedule plan in shared calendar",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"id":          "",
+				"calendar_id": otherCalendarID,
+				"name":        "plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"shares":      []interface{}{userID, otherID},
+				"is_all_day":  true,
+			},
+			code: http.StatusOK,
+			res: map[string]interface{}{
+				"id":          "",
+				"calendar_id": otherCalendarID,
+				"name":        "plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     false,
+				"shares":      []interface{}{userID, otherID},
+				"is_all_day":  true,
+				"begin":       "",
+				"end":         "",
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			body, _ := json.Marshal(tc.body)
+			req := httptest.NewRequest(http.MethodPost, "/plans", bytes.NewBuffer(body))
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			var actual map[string]interface{}
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
+			}
+		})
+	}
+}

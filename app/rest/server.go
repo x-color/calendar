@@ -26,6 +26,7 @@ func StartServer(as auth.Service, cs calendar.Service, l service.Logger) {
 func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Router {
 	ae := AuthEndpoint{as}
 	ce := CalEndpoint{cs}
+	pe := PlanEndpoint{cs}
 
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.NotFoundHandler()
@@ -44,6 +45,12 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 	cr.HandleFunc("", ce.makeCalendarHandler).Methods(http.MethodPost)
 	cr.HandleFunc("/{id}", ce.removeCalendarHandler).Methods(http.MethodDelete)
 	cr.HandleFunc("/{id}", ce.changeCalendarHandler).Methods(http.MethodPatch)
+
+	pr := r.PathPrefix("/plans").Subrouter()
+	pr.Use(authorizationMiddleware(as))
+	pr.HandleFunc("", pe.scheduleHandler).Methods(http.MethodPost)
+	pr.HandleFunc("/{id}", pe.unsheduleHandler).Methods(http.MethodDelete)
+	pr.HandleFunc("/{id}", pe.resheduleHandler).Methods(http.MethodPatch)
 
 	return r
 }
