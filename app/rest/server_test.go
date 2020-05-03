@@ -469,8 +469,10 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 func TestNewRouter_ChangeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
+	otherID := uuid.New().String()
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
+	otherCalendarID := uuid.New().String()
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
 		ID:      calendarID,
 		Name:    "My plans",
@@ -479,6 +481,15 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 		Private: true,
 		Plans:   []calendar.Plan{},
 		Shares:  []string{userID},
+	})
+	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+		ID:      otherCalendarID,
+		Name:    "My plans",
+		UserID:  otherID,
+		Color:   calendar.RED,
+		Private: false,
+		Plans:   []calendar.Plan{},
+		Shares:  []string{otherID, userID},
 	})
 	l := newLogger()
 	as := as.NewService(authRepo, l)
@@ -494,6 +505,7 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 		name   string
 		cookie *http.Cookie
 		calID  string
+		body   map[string]interface{}
 		code   int
 		res    map[string]interface{}
 	}{
@@ -501,6 +513,7 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			name:   "no cookie",
 			cookie: nil,
 			calID:  calendarID,
+			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusUnauthorized,
 			res:    map[string]interface{}{"message": "unauthorization"},
 		},
@@ -508,6 +521,7 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			name:   "invalid cookie",
 			cookie: &http.Cookie{Name: "session_id", Value: uuid.New().String()},
 			calID:  calendarID,
+			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusUnauthorized,
 			res:    map[string]interface{}{"message": "unauthorization"},
 		},
@@ -515,6 +529,7 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			name:   "invalid calendar id",
 			cookie: &cookie,
 			calID:  uuid.New().String(),
+			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusNotFound,
 			res:    map[string]interface{}{"message": "not found"},
 		},
@@ -522,13 +537,15 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			name:   "invalid content",
 			cookie: &cookie,
 			calID:  calendarID,
+			body:   map[string]interface{}{"color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusBadRequest,
 			res:    map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "not owner",
 			cookie: &cookie,
-			calID:  calendarID,
+			calID:  otherCalendarID,
+			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusForbidden,
 			res:    map[string]interface{}{"message": "unauthorization"},
 		},
@@ -536,6 +553,7 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			name:   "change calendar",
 			cookie: &cookie,
 			calID:  calendarID,
+			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusOK,
 			res:    map[string]interface{}{"message": "change calendar"},
 		},
@@ -543,7 +561,8 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPatch, "/calendars/"+tc.calID, nil)
+			body, _ := json.Marshal(tc.body)
+			req := httptest.NewRequest(http.MethodPatch, "/calendars/"+tc.calID, bytes.NewBuffer(body))
 			if tc.cookie != nil {
 				req.AddCookie(tc.cookie)
 			}
