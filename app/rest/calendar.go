@@ -12,12 +12,11 @@ import (
 )
 
 type calendarContent struct {
-	ID      string   `json:"id"`
-	Name    string   `json:"name"`
-	Color   string   `json:"color"`
-	Private bool     `json:"private"`
-	Shares  []string `json:"shares"`
-	Plans   []string `json:"plans"`
+	ID     string   `json:"id"`
+	Name   string   `json:"name"`
+	Color  string   `json:"color"`
+	Shares []string `json:"shares"`
+	Plans  []string `json:"plans"`
 }
 
 type CalEndpoint struct {
@@ -53,12 +52,11 @@ func (e *CalEndpoint) makeCalendarHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	json.NewEncoder(w).Encode(calendarContent{
-		ID:      cal.ID,
-		Name:    cal.Name,
-		Color:   string(cal.Color),
-		Private: cal.Private,
-		Shares:  cal.Shares,
-		Plans:   plans,
+		ID:     cal.ID,
+		Name:   cal.Name,
+		Color:  string(cal.Color),
+		Shares: cal.Shares,
+		Plans:  plans,
 	})
 }
 
@@ -99,11 +97,10 @@ func (e *CalEndpoint) changeCalendarHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	cal := calendar.Calendar{
-		ID:      vars["id"],
-		Name:    req.Name,
-		Color:   color,
-		Private: req.Private,
-		Shares:  req.Shares,
+		ID:     vars["id"],
+		Name:   req.Name,
+		Color:  color,
+		Shares: req.Shares,
 	}
 
 	err = e.service.ChangeCalendar(r.Context(), cal)

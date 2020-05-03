@@ -315,7 +315,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "private": true, "shares": []interface{}{userID}, "plans": []interface{}{}},
+			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "shares": []interface{}{userID}, "plans": []interface{}{}},
 		},
 	}
 
@@ -354,22 +354,20 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 	calendarID := uuid.New().String()
 	otherCalID := uuid.New().String()
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
-		ID:      calendarID,
-		Name:    "My plans",
-		UserID:  userID,
-		Color:   calendar.RED,
-		Private: true,
-		Plans:   []calendar.Plan{},
-		Shares:  []string{userID},
+		ID:     calendarID,
+		Name:   "My plans",
+		UserID: userID,
+		Color:  calendar.RED,
+		Plans:  []calendar.Plan{},
+		Shares: []string{userID},
 	})
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
-		ID:      otherCalID,
-		Name:    "Work plans",
-		UserID:  otherID,
-		Color:   calendar.YELLOW,
-		Private: false,
-		Plans:   []calendar.Plan{},
-		Shares:  []string{otherID, userID},
+		ID:     otherCalID,
+		Name:   "Work plans",
+		UserID: otherID,
+		Color:  calendar.YELLOW,
+		Plans:  []calendar.Plan{},
+		Shares: []string{otherID, userID},
 	})
 
 	l := newLogger()
@@ -474,22 +472,20 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
-		ID:      calendarID,
-		Name:    "My plans",
-		UserID:  userID,
-		Color:   calendar.RED,
-		Private: true,
-		Plans:   []calendar.Plan{},
-		Shares:  []string{userID},
+		ID:     calendarID,
+		Name:   "My plans",
+		UserID: userID,
+		Color:  calendar.RED,
+		Plans:  []calendar.Plan{},
+		Shares: []string{userID},
 	})
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
-		ID:      otherCalendarID,
-		Name:    "My plans",
-		UserID:  otherID,
-		Color:   calendar.RED,
-		Private: false,
-		Plans:   []calendar.Plan{},
-		Shares:  []string{otherID, userID},
+		ID:     otherCalendarID,
+		Name:   "My plans",
+		UserID: otherID,
+		Color:  calendar.RED,
+		Plans:  []calendar.Plan{},
+		Shares: []string{otherID, userID},
 	})
 	l := newLogger()
 	as := as.NewService(authRepo, l)

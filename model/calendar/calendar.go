@@ -5,23 +5,21 @@ import (
 )
 
 type Calendar struct {
-	ID      string
-	UserID  string
-	Name    string
-	Color   Color
-	Private bool
-	Plans   []Plan
-	Shares  []string
+	ID     string
+	UserID string
+	Name   string
+	Color  Color
+	Plans  []Plan
+	Shares []string
 }
 
 func NewCalendar(userID, name string, color Color) Calendar {
 	return Calendar{
-		ID:      uuid.New().String(),
-		UserID:  userID,
-		Name:    name,
-		Color:   color,
-		Private: true,
-		Plans:   []Plan{},
-		Shares:  []string{userID},
+		ID:     uuid.New().String(),
+		UserID: userID,
+		Name:   name,
+		Color:  color,
+		Plans:  []Plan{},
+		Shares: []string{userID},
 	}
 }
