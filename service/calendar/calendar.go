@@ -132,3 +132,64 @@ func (s *Service) unshareCalendar(ctx context.Context, userID string, cal calend
 		fmt.Sprintf("user(%v) does not permit to delete calendar(%v)", userID, cal.ID),
 	)
 }
+
+func (s *Service) ChangeCalendar(ctx context.Context, cal calendar.Calendar) error {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	userID := ctx.Value(cctx.UserIDKey).(string)
+	err := s.changeCalendar(ctx, userID, cal)
+
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Change calendar(%v)", cal.ID))
+	}
+
+	return err
+}
+
+func (s *Service) changeCalendar(ctx context.Context, userID string, cal calendar.Calendar) error {
+	if cal.ID == "" {
+		return cerror.NewInvalidContentError(
+			nil,
+			"id is empty",
+		)
+	}
+
+	if cal.Name == "" {
+		return cerror.NewInvalidContentError(
+			nil,
+			"name is empty",
+		)
+	}
+
+	in := false
+	for _, uid := range cal.Shares {
+		if userID == uid {
+			in = true
+			break
+		}
+	}
+	if !in {
+		return cerror.NewInvalidContentError(
+			nil,
+			"owner is not in shares",
+		)
+	}
+
+	c, err := s.repo.Calendar().Find(ctx, cal.ID)
+	if err != nil {
+		return err
+	}
+
+	if userID != c.UserID {
+		return cerror.NewAuthorizationError(
+			nil,
+			fmt.Sprintf("user(%v) does not permit to change calendar(%v)", userID, cal.ID),
+		)
+	}
+
+	return s.repo.Calendar().Update(ctx, cal)
+
+}

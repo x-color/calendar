@@ -6,8 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/x-color/calendar/model/calendar"
 	cerror "github.com/x-color/calendar/model/error"
-	"github.com/x-color/calendar/service/calendar"
+	cs "github.com/x-color/calendar/service/calendar"
 )
 
 type calendarContent struct {
@@ -20,7 +21,7 @@ type calendarContent struct {
 }
 
 type CalEndpoint struct {
-	service calendar.Service
+	service cs.Service
 }
 
 func (e *CalEndpoint) getCalendarsHandler(w http.ResponseWriter, r *http.Request) {
@@ -82,5 +83,47 @@ func (e *CalEndpoint) removeCalendarHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (e *CalEndpoint) changeCalendarHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	req := calendarContent{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(msgContent{"bad contents"})
+		return
+	}
+
+	color, err := calendar.ConvertToColor(req.Color)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(msgContent{"bad contents"})
+		return
+	}
+
+	cal := calendar.Calendar{
+		ID:      vars["id"],
+		Name:    req.Name,
+		Color:   color,
+		Private: req.Private,
+		Shares:  req.Shares,
+	}
+
+	err = e.service.ChangeCalendar(r.Context(), cal)
+	if errors.Is(err, cerror.ErrInvalidContent) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(msgContent{"bad contents"})
+		return
+	} else if errors.Is(err, cerror.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(msgContent{"not found"})
+		return
+	} else if errors.Is(err, cerror.ErrAuthorization) {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(msgContent{"unauthorization"})
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(msgContent{"internal server error"})
+		return
+	}
+
 	json.NewEncoder(w).Encode(msgContent{"change calendar"})
 }
