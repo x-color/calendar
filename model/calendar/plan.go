@@ -14,14 +14,6 @@ type Period struct {
 	End      time.Time
 }
 
-func NewPeriod(begin, end time.Time) Period {
-	return Period{
-		IsAllDay: false,
-		Begin:    begin,
-		End:      end,
-	}
-}
-
 type Plan struct {
 	ID         string
 	CalendarID string
