@@ -704,8 +704,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"private":     true,
 				"shares":      []interface{}{userID, otherID},
 				"is_all_day":  false,
-				"begin":       1577836800,
-				"end":         1577869200,
+				"begin":       float64(1577836800),
+				"end":         float64(1577869200),
 			},
 		},
 		{
@@ -730,8 +730,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"private":     true,
 				"shares":      []interface{}{userID, otherID},
 				"is_all_day":  true,
-				"begin":       0,
-				"end":         0,
+				"begin":       float64(0),
+				"end":         float64(0),
 			},
 		},
 		{
@@ -756,8 +756,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"private":     false,
 				"shares":      []interface{}{userID, otherID},
 				"is_all_day":  true,
-				"begin":       0,
-				"end":         0,
+				"begin":       float64(0),
+				"end":         float64(0),
 			},
 		},
 	}
