@@ -27,6 +27,7 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 	ae := AuthEndpoint{as}
 	ce := CalEndpoint{cs}
 	pe := PlanEndpoint{cs}
+	ue := UserEndpoint{cs}
 
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.NotFoundHandler()
@@ -38,6 +39,10 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 	ar.HandleFunc("/signup", ae.signupHandler).Methods(http.MethodPost)
 	ar.HandleFunc("/signin", ae.signinHandler)
 	ar.HandleFunc("/signout", ae.signoutHandler)
+
+	ur := r.PathPrefix("/register").Subrouter()
+	ur.Use(authorizationMiddleware(as))
+	ur.HandleFunc("", ue.registerHandler).Methods(http.MethodPost)
 
 	cr := r.PathPrefix("/calendars").Subrouter()
 	cr.Use(authorizationMiddleware(as))

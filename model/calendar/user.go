@@ -1,6 +1,11 @@
 package calendar
 
 type User struct {
-	ID        string
-	Calendars []Calendar
+	ID string
+}
+
+func NewUser(id string) User {
+	return User{
+		ID: id,
+	}
 }
