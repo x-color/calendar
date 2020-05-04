@@ -655,8 +655,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"shares":      []interface{}{userID},
 				"is_all_day":  true,
 			},
-			code: http.StatusNotFound,
-			res:  map[string]interface{}{"message": "not found"},
+			code: http.StatusBadRequest,
+			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "do not permit to access calendar",
@@ -667,8 +667,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"shares":      []interface{}{userID},
 				"is_all_day":  true,
 			},
-			code: http.StatusNotFound,
-			res:  map[string]interface{}{"message": "unauthorization"},
+			code: http.StatusBadRequest,
+			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "invalid content",
