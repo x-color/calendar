@@ -30,10 +30,11 @@ type Plan struct {
 	Memo       string
 	Color      Color
 	Private    bool
+	Shares     []string
 	Period     Period
 }
 
-func NewPlan(calendarID, userID, name, memo string, color Color, pricate bool, period Period) Plan {
+func NewPlan(calendarID, userID, name, memo string, color Color, private bool, shares []string, period Period) Plan {
 	return Plan{
 		ID:         uuid.New().String(),
 		CalendarID: calendarID,
@@ -41,7 +42,8 @@ func NewPlan(calendarID, userID, name, memo string, color Color, pricate bool, p
 		Name:       name,
 		Memo:       memo,
 		Color:      color,
-		Private:    true,
+		Private:    private,
+		Shares:     shares,
 		Period:     period,
 	}
 }
