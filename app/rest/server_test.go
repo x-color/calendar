@@ -691,8 +691,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"color":       "red",
 				"private":     true,
 				"shares":      []interface{}{userID, otherID},
-				"begin":       "1577836800",
-				"end":         "1577869200",
+				"begin":       1577836800,
+				"end":         1577869200,
 			},
 			code: http.StatusOK,
 			res: map[string]interface{}{
@@ -704,8 +704,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"private":     true,
 				"shares":      []interface{}{userID, otherID},
 				"is_all_day":  false,
-				"begin":       "1577836800",
-				"end":         "1577869200",
+				"begin":       1577836800,
+				"end":         1577869200,
 			},
 		},
 		{
@@ -730,8 +730,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"private":     true,
 				"shares":      []interface{}{userID, otherID},
 				"is_all_day":  true,
-				"begin":       "",
-				"end":         "",
+				"begin":       0,
+				"end":         0,
 			},
 		},
 		{
@@ -756,8 +756,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"private":     false,
 				"shares":      []interface{}{userID, otherID},
 				"is_all_day":  true,
-				"begin":       "",
-				"end":         "",
+				"begin":       0,
+				"end":         0,
 			},
 		},
 	}
