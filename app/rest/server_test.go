@@ -728,7 +728,7 @@ func TestNewRouter_Shedule(t *testing.T) {
 				"memo":        "sample text",
 				"color":       "red",
 				"private":     true,
-				"shares":      []interface{}{userID, otherID},
+				"shares":      []interface{}{userID},
 				"is_all_day":  true,
 				"begin":       float64(0),
 				"end":         float64(0),
