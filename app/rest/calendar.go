@@ -12,11 +12,11 @@ import (
 )
 
 type calendarContent struct {
-	ID     string   `json:"id"`
-	Name   string   `json:"name"`
-	Color  string   `json:"color"`
-	Shares []string `json:"shares"`
-	Plans  []string `json:"plans"`
+	ID     string        `json:"id"`
+	Name   string        `json:"name"`
+	Color  string        `json:"color"`
+	Shares []string      `json:"shares"`
+	Plans  []planContent `json:"plans"`
 }
 
 type CalEndpoint struct {
@@ -46,18 +46,11 @@ func (e *CalEndpoint) makeCalendarHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Remove it
-	plans := []string{}
-	for _, p := range cal.Plans {
-		plans = append(plans, p.ID)
-	}
-
 	json.NewEncoder(w).Encode(calendarContent{
 		ID:     cal.ID,
 		Name:   cal.Name,
 		Color:  string(cal.Color),
 		Shares: cal.Shares,
-		Plans:  plans,
 	})
 }
 

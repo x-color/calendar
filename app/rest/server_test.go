@@ -315,7 +315,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "shares": []interface{}{userID}, "plans": []interface{}{}},
+			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "shares": []interface{}{userID}, "plans": nil},
 		},
 	}
 
