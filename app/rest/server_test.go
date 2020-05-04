@@ -267,6 +267,73 @@ func TestNewRouter_Signout(t *testing.T) {
 	}
 }
 
+func TestNewRouter_RegisterUser(t *testing.T) {
+	authRepo := newAuthRepo()
+	_, sessionID := makeSession(authRepo)
+	calRepo := newCalRepo()
+
+	l := newLogger()
+	as := as.NewService(authRepo, l)
+	cs := cs.NewService(calRepo, l)
+	r := newRouter(as, cs, l)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		code   int
+		res    map[string]interface{}
+	}{
+		{
+			name:   "no cookie",
+			cookie: nil,
+			code:   http.StatusUnauthorized,
+			res:    map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "invalid cookie",
+			cookie: &http.Cookie{Name: "session_id", Value: uuid.New().String()},
+			code:   http.StatusUnauthorized,
+			res:    map[string]interface{}{"message": "unauthorization"},
+		},
+		{
+			name:   "register user",
+			cookie: &cookie,
+			code:   http.StatusOK,
+			res:    map[string]interface{}{"message": "register"},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/register", nil)
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			var actual map[string]interface{}
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
+			}
+		})
+	}
+}
+
 func TestNewRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
