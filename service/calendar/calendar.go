@@ -15,6 +15,7 @@ type Repogitory interface {
 	// TxCommit()
 	// TxRollback()
 	Calendar() CalendarRepogitory
+	Plan() PlanRepogitory
 }
 
 type CalendarRepogitory interface {
@@ -22,6 +23,13 @@ type CalendarRepogitory interface {
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, cal calendar.Calendar) error
 	Find(ctx context.Context, id string) (calendar.Calendar, error)
+}
+
+type PlanRepogitory interface {
+	Create(ctx context.Context, plan calendar.Plan) error
+	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, plan calendar.Plan) error
+	Find(ctx context.Context, id string) (calendar.Plan, error)
 }
 
 type Service struct {

@@ -13,6 +13,7 @@ type inmem struct {
 	userRepo     userRepo
 	sessionRepo  sessionRepo
 	calendarRepo calendarRepo
+	planRepo     planRepo
 }
 
 func (m *inmem) User() as.UserRepogitory {
@@ -25,6 +26,10 @@ func (m *inmem) Session() as.SessionRepogitory {
 
 func (m *inmem) Calendar() cs.CalendarRepogitory {
 	return &m.calendarRepo
+}
+
+func (m *inmem) Plan() cs.PlanRepogitory {
+	return &m.planRepo
 }
 
 func NewRepogitory() inmem {
@@ -40,9 +45,14 @@ func NewRepogitory() inmem {
 		m:         sync.RWMutex{},
 		calendars: []calendar.Calendar{},
 	}
+	p := planRepo{
+		m:     sync.RWMutex{},
+		plans: []calendar.Plan{},
+	}
 	return inmem{
 		userRepo:     u,
 		sessionRepo:  s,
 		calendarRepo: c,
+		planRepo:     p,
 	}
 }

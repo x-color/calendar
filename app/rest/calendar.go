@@ -46,6 +46,7 @@ func (e *CalEndpoint) makeCalendarHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Remove it
 	plans := []string{}
 	for _, p := range cal.Plans {
 		plans = append(plans, p.ID)
