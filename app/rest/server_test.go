@@ -995,35 +995,30 @@ func TestNewRouter_Unshedule(t *testing.T) {
 		cookie *http.Cookie
 		planID string
 		code   int
-		res    map[string]interface{}
 	}{
 		{
 			name:   "invalid plan id",
 			cookie: &cookie,
 			planID: uuid.New().String(),
 			code:   http.StatusNotFound,
-			res:    map[string]interface{}{"message": "not found"},
 		},
 		{
 			name:   "do not permit to access plan",
 			cookie: &cookie,
 			planID: otherPlanID,
 			code:   http.StatusBadRequest,
-			res:    map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "unshedule plan",
 			cookie: &cookie,
 			planID: planID,
 			code:   http.StatusNoContent,
-			res:    nil,
 		},
 		{
 			name:   "unshedule shared plan",
 			cookie: &cookie,
 			planID: sharedPlanID,
 			code:   http.StatusNoContent,
-			res:    nil,
 		},
 	}
 
@@ -1038,16 +1033,6 @@ func TestNewRouter_Unshedule(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
