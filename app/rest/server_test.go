@@ -334,6 +334,78 @@ func TestNewRouter_AuthoraizationMiddleware(t *testing.T) {
 	}
 }
 
+func TestNewRouter_UserCheckerMiddleware(t *testing.T) {
+	authRepo := newAuthRepo()
+	userID, sessionID := makeSession(authRepo)
+	_, sessionID2 := makeSession(authRepo)
+	calRepo := newCalRepo()
+	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
+
+	l := newLogger()
+	as := as.NewService(authRepo, l)
+	cs := cs.NewService(calRepo, l)
+	r := newRouter(as, cs, l)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	cookie2 := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID2,
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		body   map[string]interface{}
+		code   int
+		res    map[string]interface{}
+	}{
+		{
+			name:   "no registered user",
+			cookie: &cookie2,
+			body:   map[string]interface{}{"name": "test", "color": "red"},
+			code:   http.StatusForbidden,
+			res:    map[string]interface{}{"message": "forbidden"},
+		},
+		{
+			name:   "registered user",
+			cookie: &cookie,
+			body:   map[string]interface{}{"name": "test", "color": "red"},
+			code:   http.StatusOK,
+			res:    map[string]interface{}{"id": "", "name": "test", "color": "red", "shares": []interface{}{userID}, "plans": nil},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			body, _ := json.Marshal(tc.body)
+			req := httptest.NewRequest(http.MethodPost, "/calendars", bytes.NewBuffer(body))
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			var actual map[string]interface{}
+			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+				t.Errorf("invalid response body: %v", rec.Body.String())
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
+			}
+		})
+	}
+}
+
 func TestNewRouter_RegisterUser(t *testing.T) {
 	authRepo := newAuthRepo()
 	_, sessionID := makeSession(authRepo)
@@ -393,6 +465,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
+	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
 
 	l := newLogger()
 	as := as.NewService(authRepo, l)
@@ -461,6 +534,7 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalID := uuid.New().String()
+	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
@@ -565,6 +639,7 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
+	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
@@ -667,6 +742,7 @@ func TestNewRouter_Shedule(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
+	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
 	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
