@@ -4,16 +4,18 @@ import (
 	"os"
 
 	"github.com/x-color/calendar/app/rest"
+	authInmem "github.com/x-color/calendar/auth/repogitory/inmem"
+	as "github.com/x-color/calendar/auth/service"
+	calInmem "github.com/x-color/calendar/calendar/repogitory/inmem"
+	cs "github.com/x-color/calendar/calendar/service"
 	"github.com/x-color/calendar/logging"
-	"github.com/x-color/calendar/repogitory/inmem"
-	"github.com/x-color/calendar/service/auth"
-	"github.com/x-color/calendar/service/calendar"
 )
 
 func main() {
 	l := logging.NewLogger(os.Stdout)
-	r := inmem.NewRepogitory()
-	as := auth.NewService(&r, &l)
-	cs := calendar.NewService(&r, &l)
-	rest.StartServer(as, cs, &l)
+	ar := authInmem.NewRepogitory()
+	cr := calInmem.NewRepogitory()
+	a := as.NewService(&ar, &l)
+	c := cs.NewService(&cr, &l)
+	rest.StartServer(a, c, &l)
 }

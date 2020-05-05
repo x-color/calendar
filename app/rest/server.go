@@ -4,30 +4,23 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/x-color/calendar/service"
-	"github.com/x-color/calendar/service/auth"
-	"github.com/x-color/calendar/service/calendar"
+	ase "github.com/x-color/calendar/app/rest/auth"
+	cse "github.com/x-color/calendar/app/rest/calendar"
+	as "github.com/x-color/calendar/auth/service"
+	cs "github.com/x-color/calendar/calendar/service"
+	"github.com/x-color/calendar/logging"
 )
 
-type userContent struct {
-	Name     string `json:"name"`
-	Password string `json:"password"`
-}
-
-type msgContent struct {
-	Msg string `json:"message"`
-}
-
-func StartServer(as auth.Service, cs calendar.Service, l service.Logger) {
-	r := newRouter(as, cs, l)
+func StartServer(authService as.Service, calService cs.Service, l logging.Logger) {
+	r := newRouter(authService, calService, l)
 	http.ListenAndServe(":8080", r)
 }
 
-func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Router {
-	ae := AuthEndpoint{as}
-	ce := CalEndpoint{cs}
-	pe := PlanEndpoint{cs}
-	ue := UserEndpoint{cs}
+func newRouter(authService as.Service, calService cs.Service, l logging.Logger) *mux.Router {
+	ae := ase.NewAuthEndpoint(authService)
+	ce := cse.NewCalEndpoint(calService)
+	pe := cse.NewPlanEndpoint(calService)
+	ue := cse.NewUserEndpoint(calService)
 
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.NotFoundHandler()
@@ -36,28 +29,28 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 	r.Use(responseHeaderMiddleware)
 
 	ar := r.PathPrefix("/auth").Subrouter()
-	ar.HandleFunc("/signup", ae.signupHandler).Methods(http.MethodPost)
-	ar.HandleFunc("/signin", ae.signinHandler)
-	ar.HandleFunc("/signout", ae.signoutHandler)
+	ar.HandleFunc("/signup", ae.SignupHandler).Methods(http.MethodPost)
+	ar.HandleFunc("/signin", ae.SigninHandler)
+	ar.HandleFunc("/signout", ae.SignoutHandler)
 
 	ur := r.PathPrefix("/register").Subrouter()
-	ur.Use(authorizationMiddleware(as))
-	ur.HandleFunc("", ue.registerHandler).Methods(http.MethodPost)
+	ur.Use(authorizationMiddleware(authService))
+	ur.HandleFunc("", ue.RegisterHandler).Methods(http.MethodPost)
 
 	cr := r.PathPrefix("/calendars").Subrouter()
-	cr.Use(authorizationMiddleware(as))
-	cr.Use(userCheckerMiddleware(cs))
-	cr.HandleFunc("", ce.getCalendarsHandler).Methods(http.MethodGet)
-	cr.HandleFunc("", ce.makeCalendarHandler).Methods(http.MethodPost)
-	cr.HandleFunc("/{id}", ce.removeCalendarHandler).Methods(http.MethodDelete)
-	cr.HandleFunc("/{id}", ce.changeCalendarHandler).Methods(http.MethodPatch)
+	cr.Use(authorizationMiddleware(authService))
+	cr.Use(userCheckerMiddleware(calService))
+	cr.HandleFunc("", ce.GetCalendarsHandler).Methods(http.MethodGet)
+	cr.HandleFunc("", ce.MakeCalendarHandler).Methods(http.MethodPost)
+	cr.HandleFunc("/{id}", ce.RemoveCalendarHandler).Methods(http.MethodDelete)
+	cr.HandleFunc("/{id}", ce.ChangeCalendarHandler).Methods(http.MethodPatch)
 
 	pr := r.PathPrefix("/plans").Subrouter()
-	pr.Use(authorizationMiddleware(as))
-	cr.Use(userCheckerMiddleware(cs))
-	pr.HandleFunc("", pe.scheduleHandler).Methods(http.MethodPost)
-	pr.HandleFunc("/{id}", pe.unsheduleHandler).Methods(http.MethodDelete)
-	pr.HandleFunc("/{id}", pe.resheduleHandler).Methods(http.MethodPatch)
+	pr.Use(authorizationMiddleware(authService))
+	cr.Use(userCheckerMiddleware(calService))
+	pr.HandleFunc("", pe.ScheduleHandler).Methods(http.MethodPost)
+	pr.HandleFunc("/{id}", pe.UnsheduleHandler).Methods(http.MethodDelete)
+	pr.HandleFunc("/{id}", pe.ResheduleHandler).Methods(http.MethodPatch)
 
 	return r
 }

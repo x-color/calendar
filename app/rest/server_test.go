@@ -13,27 +13,27 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	mauth "github.com/x-color/calendar/auth/model"
+	authInmem "github.com/x-color/calendar/auth/repogitory/inmem"
+	as "github.com/x-color/calendar/auth/service"
+	mcal "github.com/x-color/calendar/calendar/model"
+	calInmem "github.com/x-color/calendar/calendar/repogitory/inmem"
+	cs "github.com/x-color/calendar/calendar/service"
 	"github.com/x-color/calendar/logging"
-	mauth "github.com/x-color/calendar/model/auth"
-	"github.com/x-color/calendar/model/calendar"
-	"github.com/x-color/calendar/repogitory/inmem"
-	"github.com/x-color/calendar/service"
-	as "github.com/x-color/calendar/service/auth"
-	cs "github.com/x-color/calendar/service/calendar"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func newAuthRepo() as.Repogitory {
-	r := inmem.NewRepogitory()
+	r := authInmem.NewRepogitory()
 	return &r
 }
 
 func newCalRepo() cs.Repogitory {
-	r := inmem.NewRepogitory()
+	r := calInmem.NewRepogitory()
 	return &r
 }
 
-func newLogger() service.Logger {
+func newLogger() logging.Logger {
 	l := logging.NewLogger(ioutil.Discard)
 	return &l
 }
@@ -339,7 +339,7 @@ func TestNewRouter_UserCheckerMiddleware(t *testing.T) {
 	userID, sessionID := makeSession(authRepo)
 	_, sessionID2 := makeSession(authRepo)
 	calRepo := newCalRepo()
-	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
+	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
 
 	l := newLogger()
 	as := as.NewService(authRepo, l)
@@ -465,7 +465,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
-	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
+	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
 
 	l := newLogger()
 	as := as.NewService(authRepo, l)
@@ -534,21 +534,21 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
 		UserID: userID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{userID},
 	})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     otherCalID,
 		Name:   "Work plans",
 		UserID: otherID,
-		Color:  calendar.YELLOW,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.YELLOW,
+		Plans:  []mcal.Plan{},
 		Shares: []string{otherID, userID},
 	})
 
@@ -639,21 +639,21 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
 		UserID: userID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{userID},
 	})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     otherCalendarID,
 		Name:   "My plans",
 		UserID: otherID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{otherID, userID},
 	})
 	l := newLogger()
@@ -742,21 +742,21 @@ func TestNewRouter_Shedule(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
 		UserID: userID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{userID},
 	})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     otherCalendarID,
 		Name:   "My plans",
 		UserID: otherID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{otherID, userID},
 	})
 	l := newLogger()
@@ -926,57 +926,57 @@ func TestNewRouter_Unshedule(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), calendar.User{userID})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     calendarID,
 		Name:   "My plans",
 		UserID: userID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{userID},
 	})
-	calRepo.Calendar().Create(context.Background(), calendar.Calendar{
+	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
 		ID:     otherCalendarID,
 		Name:   "My plans",
 		UserID: otherID,
-		Color:  calendar.RED,
-		Plans:  []calendar.Plan{},
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
 		Shares: []string{otherID, userID},
 	})
 
 	planID := uuid.New().String()
 	sharedPlanID := uuid.New().String()
 	otherPlanID := uuid.New().String()
-	calRepo.Plan().Create(context.Background(), calendar.Plan{
+	calRepo.Plan().Create(context.Background(), mcal.Plan{
 		ID:         planID,
 		CalendarID: calendarID,
 		UserID:     userID,
 		Name:       "My plan",
-		Color:      calendar.RED,
+		Color:      mcal.RED,
 		Shares:     []string{userID},
-		Period: calendar.Period{
+		Period: mcal.Period{
 			IsAllDay: true,
 		},
 	})
-	calRepo.Plan().Create(context.Background(), calendar.Plan{
+	calRepo.Plan().Create(context.Background(), mcal.Plan{
 		ID:         sharedPlanID,
 		CalendarID: otherCalendarID,
 		UserID:     otherID,
 		Name:       "My plan",
-		Color:      calendar.RED,
+		Color:      mcal.RED,
 		Shares:     []string{otherID, userID},
-		Period: calendar.Period{
+		Period: mcal.Period{
 			IsAllDay: true,
 		},
 	})
-	calRepo.Plan().Create(context.Background(), calendar.Plan{
+	calRepo.Plan().Create(context.Background(), mcal.Plan{
 		ID:         otherPlanID,
 		CalendarID: otherCalendarID,
 		UserID:     otherID,
 		Name:       "My plan",
-		Color:      calendar.RED,
+		Color:      mcal.RED,
 		Shares:     []string{otherID},
-		Period: calendar.Period{
+		Period: mcal.Period{
 			IsAllDay: true,
 		},
 	})

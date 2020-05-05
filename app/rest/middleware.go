@@ -7,11 +7,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	as "github.com/x-color/calendar/auth/service"
+	cs "github.com/x-color/calendar/calendar/service"
+	"github.com/x-color/calendar/logging"
 	cctx "github.com/x-color/calendar/model/ctx"
-	"github.com/x-color/calendar/service"
-	as "github.com/x-color/calendar/service/auth"
-	cs "github.com/x-color/calendar/service/calendar"
 )
+
+type msgContent struct {
+	Msg string `json:"message"`
+}
 
 func reqIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +25,7 @@ func reqIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func loggingMiddleware(logger service.Logger) mux.MiddlewareFunc {
+func loggingMiddleware(logger logging.Logger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqID := r.Context().Value(cctx.ReqIDKey).(string)

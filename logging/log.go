@@ -4,8 +4,6 @@ import (
 	"io"
 
 	"log"
-
-	"github.com/x-color/calendar/service"
 )
 
 type logger struct {
@@ -13,7 +11,7 @@ type logger struct {
 	uid string
 }
 
-func (l *logger) Uniq(id string) service.Logger {
+func (l *logger) Uniq(id string) Logger {
 	return &logger{
 		l:   l.l,
 		uid: id,
