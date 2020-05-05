@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/x-color/calendar/model/calendar"
+	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
 	cs "github.com/x-color/calendar/service/calendar"
 )
@@ -57,7 +58,8 @@ func (e *PlanEndpoint) scheduleHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	plan, err := e.service.Schedule(r.Context(), planPram)
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	plan, err := e.service.Schedule(r.Context(), userID, planPram)
 	if errors.Is(err, cerror.ErrInvalidContent) || errors.Is(err, cerror.ErrAuthorization) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(msgContent{"bad contents"})

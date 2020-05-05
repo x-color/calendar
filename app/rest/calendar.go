@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/x-color/calendar/model/calendar"
+	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
 	cs "github.com/x-color/calendar/service/calendar"
 )
@@ -35,7 +36,8 @@ func (e *CalEndpoint) makeCalendarHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	cal, err := e.service.MakeCalendar(r.Context(), req.Name, req.Color)
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	cal, err := e.service.MakeCalendar(r.Context(), userID, req.Name, req.Color)
 	if errors.Is(err, cerror.ErrInvalidContent) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(msgContent{"bad contents"})
@@ -56,7 +58,8 @@ func (e *CalEndpoint) makeCalendarHandler(w http.ResponseWriter, r *http.Request
 
 func (e *CalEndpoint) removeCalendarHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	err := e.service.RemoveCalendar(r.Context(), vars["id"])
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	err := e.service.RemoveCalendar(r.Context(), userID, vars["id"])
 	if errors.Is(err, cerror.ErrInvalidContent) || errors.Is(err, cerror.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(msgContent{"not found"})
@@ -97,7 +100,8 @@ func (e *CalEndpoint) changeCalendarHandler(w http.ResponseWriter, r *http.Reque
 		Shares: req.Shares,
 	}
 
-	err = e.service.ChangeCalendar(r.Context(), cal)
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	err = e.service.ChangeCalendar(r.Context(), userID, cal)
 	if errors.Is(err, cerror.ErrInvalidContent) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(msgContent{"bad contents"})

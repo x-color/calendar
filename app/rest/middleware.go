@@ -64,7 +64,8 @@ func authorizationMiddleware(service as.Service) mux.MiddlewareFunc {
 func userCheckerMiddleware(service cs.Service) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			err := service.CheckRegistration(r.Context())
+			userID := r.Context().Value(cctx.UserIDKey).(string)
+			err := service.CheckRegistration(r.Context(), userID)
 			if err != nil {
 				w.WriteHeader(http.StatusForbidden)
 				json.NewEncoder(w).Encode(msgContent{"forbidden"})

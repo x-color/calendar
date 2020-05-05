@@ -10,11 +10,10 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-func (s *Service) Schedule(ctx context.Context, planPram calendar.Plan) (calendar.Plan, error) {
+func (s *Service) Schedule(ctx context.Context, userID string, planPram calendar.Plan) (calendar.Plan, error) {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	userID := ctx.Value(cctx.UserIDKey).(string)
 	planPram.UserID = userID
 
 	plan, err := s.schedule(ctx, planPram)

@@ -9,11 +9,10 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-func (s *Service) MakeCalendar(ctx context.Context, name, color string) (calendar.Calendar, error) {
+func (s *Service) MakeCalendar(ctx context.Context, userID, name, color string) (calendar.Calendar, error) {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	userID := ctx.Value(cctx.UserIDKey).(string)
 	cal, err := s.makeCalendar(ctx, userID, name, color)
 
 	if err != nil {
@@ -46,11 +45,10 @@ func (s *Service) makeCalendar(ctx context.Context, userID, name, color string) 
 	return cal, nil
 }
 
-func (s *Service) RemoveCalendar(ctx context.Context, id string) error {
+func (s *Service) RemoveCalendar(ctx context.Context, userID, id string) error {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	userID := ctx.Value(cctx.UserIDKey).(string)
 	err := s.removeCalendar(ctx, userID, id)
 
 	if err != nil {
@@ -106,11 +104,10 @@ func (s *Service) unshareCalendar(ctx context.Context, userID string, cal calend
 	)
 }
 
-func (s *Service) ChangeCalendar(ctx context.Context, cal calendar.Calendar) error {
+func (s *Service) ChangeCalendar(ctx context.Context, userID string, cal calendar.Calendar) error {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	userID := ctx.Value(cctx.UserIDKey).(string)
 	err := s.changeCalendar(ctx, userID, cal)
 
 	if err != nil {
@@ -164,5 +161,4 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, cal calenda
 	}
 
 	return s.repo.Calendar().Update(ctx, cal)
-
 }

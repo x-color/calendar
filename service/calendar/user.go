@@ -10,11 +10,10 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-func (s *Service) RegisterUser(ctx context.Context) (calendar.User, error) {
+func (s *Service) RegisterUser(ctx context.Context, userID string) (calendar.User, error) {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	userID := ctx.Value(cctx.UserIDKey).(string)
 	user, err := s.registerUser(ctx, userID)
 
 	if err != nil {
@@ -43,11 +42,10 @@ func (s *Service) registerUser(ctx context.Context, id string) (calendar.User, e
 	return user, nil
 }
 
-func (s *Service) CheckRegistration(ctx context.Context) error {
+func (s *Service) CheckRegistration(ctx context.Context, userID string) error {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	userID := ctx.Value(cctx.UserIDKey).(string)
 	err := s.checkRegistration(ctx, userID)
 
 	if err != nil {
