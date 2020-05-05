@@ -53,6 +53,35 @@ func makeSession(authRepo as.Repogitory) (string, string) {
 	return userID, sessionID
 }
 
+func makeCalendar(calRepo cs.Repogitory, ownerID string, shares ...string) mcal.Calendar {
+	cal := mcal.Calendar{
+		ID:     uuid.New().String(),
+		Name:   "My plans",
+		UserID: ownerID,
+		Color:  mcal.RED,
+		Plans:  []mcal.Plan{},
+		Shares: append(shares, ownerID),
+	}
+	calRepo.Calendar().Create(context.Background(), cal)
+	return cal
+}
+
+func makePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...string) mcal.Plan {
+	plan := mcal.Plan{
+		ID:         uuid.New().String(),
+		CalendarID: calendarID,
+		UserID:     ownerID,
+		Name:       "My plan",
+		Color:      mcal.RED,
+		Shares:     append(shares, calendarID),
+		Period: mcal.Period{
+			IsAllDay: true,
+		},
+	}
+	calRepo.Plan().Create(context.Background(), plan)
+	return plan
+}
+
 func ignoreKey(key string) cmp.Option {
 	return cmpopts.IgnoreMapEntries(func(k string, t interface{}) bool {
 		return k == key
@@ -740,25 +769,10 @@ func TestNewRouter_Shedule(t *testing.T) {
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
 	calRepo := newCalRepo()
-	calendarID := uuid.New().String()
-	otherCalendarID := uuid.New().String()
 	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
-		ID:     calendarID,
-		Name:   "My plans",
-		UserID: userID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
-		Shares: []string{userID},
-	})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
-		ID:     otherCalendarID,
-		Name:   "My plans",
-		UserID: otherID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
-		Shares: []string{otherID, userID},
-	})
+	cal := makeCalendar(calRepo, userID)
+	otherCal := makeCalendar(calRepo, otherID)
+	sharedCal := makeCalendar(calRepo, otherID, userID)
 	l := newLogger()
 	as := as.NewService(authRepo, l)
 	cs := cs.NewService(calRepo, l)
@@ -782,7 +796,7 @@ func TestNewRouter_Shedule(t *testing.T) {
 			body: map[string]interface{}{
 				"calendar_id": uuid.New().String(),
 				"name":        "plan",
-				"shares":      []interface{}{userID},
+				"shares":      []interface{}{uuid.New().String()},
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
@@ -792,9 +806,27 @@ func TestNewRouter_Shedule(t *testing.T) {
 			name:   "do not permit to access calendar",
 			cookie: &cookie,
 			body: map[string]interface{}{
-				"calendar_id": otherCalendarID,
-				"name":        "plan",
-				"shares":      []interface{}{userID},
+				"calendar_id": otherCal.ID,
+				"name":        "all day plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{otherCal.ID},
+				"is_all_day":  true,
+			},
+			code: http.StatusBadRequest,
+			res:  map[string]interface{}{"message": "bad contents"},
+		},
+		{
+			name:   "not shared calendar",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": cal.ID,
+				"name":        "all day plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{cal.ID, otherCal.ID},
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
@@ -804,8 +836,8 @@ func TestNewRouter_Shedule(t *testing.T) {
 			name:   "invalid content",
 			cookie: &cookie,
 			body: map[string]interface{}{
-				"calendar_id": calendarID,
-				"shares":      []interface{}{userID},
+				"calendar_id": cal.ID,
+				"shares":      []interface{}{cal.ID},
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
@@ -815,24 +847,24 @@ func TestNewRouter_Shedule(t *testing.T) {
 			name:   "shedule plan",
 			cookie: &cookie,
 			body: map[string]interface{}{
-				"calendar_id": calendarID,
+				"calendar_id": cal.ID,
 				"name":        "plan",
 				"memo":        "sample text",
 				"color":       "red",
 				"private":     true,
-				"shares":      []interface{}{userID, otherID},
+				"shares":      []interface{}{cal.ID, sharedCal.ID},
 				"begin":       1577836800,
 				"end":         1577869200,
 			},
 			code: http.StatusOK,
 			res: map[string]interface{}{
 				"id":          "",
-				"calendar_id": calendarID,
+				"calendar_id": cal.ID,
 				"name":        "plan",
 				"memo":        "sample text",
 				"color":       "red",
 				"private":     true,
-				"shares":      []interface{}{userID, otherID},
+				"shares":      []interface{}{cal.ID, sharedCal.ID},
 				"is_all_day":  false,
 				"begin":       float64(1577836800),
 				"end":         float64(1577869200),
@@ -842,23 +874,23 @@ func TestNewRouter_Shedule(t *testing.T) {
 			name:   "shedule all day plan",
 			cookie: &cookie,
 			body: map[string]interface{}{
-				"calendar_id": calendarID,
+				"calendar_id": cal.ID,
 				"name":        "all day plan",
 				"memo":        "sample text",
 				"color":       "red",
 				"private":     true,
-				"shares":      []interface{}{userID},
+				"shares":      []interface{}{cal.ID},
 				"is_all_day":  true,
 			},
 			code: http.StatusOK,
 			res: map[string]interface{}{
 				"id":          "",
-				"calendar_id": calendarID,
+				"calendar_id": cal.ID,
 				"name":        "all day plan",
 				"memo":        "sample text",
 				"color":       "red",
 				"private":     true,
-				"shares":      []interface{}{userID},
+				"shares":      []interface{}{cal.ID},
 				"is_all_day":  true,
 				"begin":       float64(0),
 				"end":         float64(0),
@@ -869,22 +901,22 @@ func TestNewRouter_Shedule(t *testing.T) {
 			cookie: &cookie,
 			body: map[string]interface{}{
 				"id":          "",
-				"calendar_id": otherCalendarID,
+				"calendar_id": sharedCal.ID,
 				"name":        "plan",
 				"memo":        "sample text",
 				"color":       "red",
-				"shares":      []interface{}{userID, otherID},
+				"shares":      []interface{}{sharedCal.ID},
 				"is_all_day":  true,
 			},
 			code: http.StatusOK,
 			res: map[string]interface{}{
 				"id":          "",
-				"calendar_id": otherCalendarID,
+				"calendar_id": sharedCal.ID,
 				"name":        "plan",
 				"memo":        "sample text",
 				"color":       "red",
 				"private":     false,
-				"shares":      []interface{}{userID, otherID},
+				"shares":      []interface{}{sharedCal.ID},
 				"is_all_day":  true,
 				"begin":       float64(0),
 				"end":         float64(0),
@@ -924,62 +956,15 @@ func TestNewRouter_Unshedule(t *testing.T) {
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
 	calRepo := newCalRepo()
-	calendarID := uuid.New().String()
-	otherCalendarID := uuid.New().String()
 	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
-		ID:     calendarID,
-		Name:   "My plans",
-		UserID: userID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
-		Shares: []string{userID},
-	})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
-		ID:     otherCalendarID,
-		Name:   "My plans",
-		UserID: otherID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
-		Shares: []string{otherID, userID},
-	})
+	cal := makeCalendar(calRepo, userID, otherID)
+	sharedCal := makeCalendar(calRepo, otherID, userID)
+	otherCal := makeCalendar(calRepo, otherID)
 
-	planID := uuid.New().String()
-	sharedPlanID := uuid.New().String()
-	otherPlanID := uuid.New().String()
-	calRepo.Plan().Create(context.Background(), mcal.Plan{
-		ID:         planID,
-		CalendarID: calendarID,
-		UserID:     userID,
-		Name:       "My plan",
-		Color:      mcal.RED,
-		Shares:     []string{userID},
-		Period: mcal.Period{
-			IsAllDay: true,
-		},
-	})
-	calRepo.Plan().Create(context.Background(), mcal.Plan{
-		ID:         sharedPlanID,
-		CalendarID: otherCalendarID,
-		UserID:     otherID,
-		Name:       "My plan",
-		Color:      mcal.RED,
-		Shares:     []string{otherID, userID},
-		Period: mcal.Period{
-			IsAllDay: true,
-		},
-	})
-	calRepo.Plan().Create(context.Background(), mcal.Plan{
-		ID:         otherPlanID,
-		CalendarID: otherCalendarID,
-		UserID:     otherID,
-		Name:       "My plan",
-		Color:      mcal.RED,
-		Shares:     []string{otherID},
-		Period: mcal.Period{
-			IsAllDay: true,
-		},
-	})
+	plan := makePlan(calRepo, userID, cal.ID)
+	sharedPlan := makePlan(calRepo, otherID, sharedCal.ID)
+	otherPlan := makePlan(calRepo, otherID, otherCal.ID)
+
 	l := newLogger()
 	as := as.NewService(authRepo, l)
 	cs := cs.NewService(calRepo, l)
@@ -1005,19 +990,19 @@ func TestNewRouter_Unshedule(t *testing.T) {
 		{
 			name:   "do not permit to access plan",
 			cookie: &cookie,
-			planID: otherPlanID,
+			planID: otherPlan.ID,
 			code:   http.StatusForbidden,
 		},
 		{
 			name:   "unshedule plan",
 			cookie: &cookie,
-			planID: planID,
+			planID: plan.ID,
 			code:   http.StatusNoContent,
 		},
 		{
 			name:   "unshedule shared plan",
 			cookie: &cookie,
-			planID: sharedPlanID,
+			planID: sharedPlan.ID,
 			code:   http.StatusNoContent,
 		},
 	}
