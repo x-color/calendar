@@ -9,7 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	cctx "github.com/x-color/calendar/model/ctx"
 	"github.com/x-color/calendar/service"
-	"github.com/x-color/calendar/service/auth"
+	as "github.com/x-color/calendar/service/auth"
+	cs "github.com/x-color/calendar/service/calendar"
 )
 
 func reqIDMiddleware(next http.Handler) http.Handler {
@@ -37,7 +38,7 @@ func responseHeaderMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func authorizationMiddleware(service auth.Service) mux.MiddlewareFunc {
+func authorizationMiddleware(service as.Service) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie("session_id")
@@ -55,6 +56,20 @@ func authorizationMiddleware(service auth.Service) mux.MiddlewareFunc {
 			}
 			ctx := context.WithValue(r.Context(), cctx.UserIDKey, userID)
 			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func userCheckerMiddleware(service cs.Service) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			err := service.CheckRegistration(r.Context())
+			if err != nil {
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(msgContent{"forbidden"})
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	}

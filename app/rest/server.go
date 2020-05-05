@@ -46,6 +46,7 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 
 	cr := r.PathPrefix("/calendars").Subrouter()
 	cr.Use(authorizationMiddleware(as))
+	cr.Use(userCheckerMiddleware(cs))
 	cr.HandleFunc("", ce.getCalendarsHandler).Methods(http.MethodGet)
 	cr.HandleFunc("", ce.makeCalendarHandler).Methods(http.MethodPost)
 	cr.HandleFunc("/{id}", ce.removeCalendarHandler).Methods(http.MethodDelete)
@@ -53,6 +54,7 @@ func newRouter(as auth.Service, cs calendar.Service, l service.Logger) *mux.Rout
 
 	pr := r.PathPrefix("/plans").Subrouter()
 	pr.Use(authorizationMiddleware(as))
+	cr.Use(userCheckerMiddleware(cs))
 	pr.HandleFunc("", pe.scheduleHandler).Methods(http.MethodPost)
 	pr.HandleFunc("/{id}", pe.unsheduleHandler).Methods(http.MethodDelete)
 	pr.HandleFunc("/{id}", pe.resheduleHandler).Methods(http.MethodPatch)
