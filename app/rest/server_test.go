@@ -1006,7 +1006,7 @@ func TestNewRouter_Unshedule(t *testing.T) {
 			name:   "do not permit to access plan",
 			cookie: &cookie,
 			planID: otherPlanID,
-			code:   http.StatusBadRequest,
+			code:   http.StatusForbidden,
 		},
 		{
 			name:   "unshedule plan",
