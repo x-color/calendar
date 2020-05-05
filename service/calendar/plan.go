@@ -85,3 +85,65 @@ func (s *Service) schedule(ctx context.Context, planPram calendar.Plan) (calenda
 
 	return plan, nil
 }
+
+func (s *Service) Unschedule(ctx context.Context, userID, id string) error {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	err := s.unschedule(ctx, userID, id)
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Unschedule plan(%v)", id))
+	}
+
+	return err
+}
+
+func (s *Service) unschedule(ctx context.Context, userID, id string) error {
+	if id == "" {
+		return cerror.NewInvalidContentError(
+			nil,
+			"id are empty",
+		)
+	}
+
+	plan, err := s.repo.Plan().Find(ctx, id)
+	if errors.Is(err, cerror.ErrNotFound) {
+		return cerror.NewInvalidContentError(
+			nil,
+			"invalid plan id",
+		)
+	} else if err != nil {
+		return err
+	}
+
+	if userID != plan.UserID {
+		return s.unsharePlan(ctx, userID, plan)
+	}
+
+	return s.repo.Plan().Delete(ctx, id)
+}
+
+func (s *Service) unsharePlan(ctx context.Context, userID string, plan calendar.Plan) error {
+	in := false
+	for i, u := range plan.Shares {
+		if userID == u {
+			in = true
+			if i == len(plan.Shares) {
+				plan.Shares = plan.Shares[:i]
+			} else {
+				plan.Shares = append(plan.Shares[:i], plan.Shares[i+1:]...)
+			}
+			break
+		}
+	}
+	if !in {
+		return cerror.NewAuthorizationError(
+			nil,
+			fmt.Sprintf("user(%v) does not permit to access the plan(%v)", userID, plan.ID),
+		)
+	}
+
+	return s.repo.Plan().Update(ctx, plan)
+}

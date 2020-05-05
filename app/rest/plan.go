@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/x-color/calendar/model/calendar"
 	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
@@ -85,7 +86,21 @@ func (e *PlanEndpoint) scheduleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *PlanEndpoint) unsheduleHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(msgContent{"unshedule plan"})
+	vars := mux.Vars(r)
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	err := e.service.Unschedule(r.Context(), userID, vars["id"])
+	if errors.Is(err, cerror.ErrInvalidContent) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if errors.Is(err, cerror.ErrAuthorization) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (e *PlanEndpoint) resheduleHandler(w http.ResponseWriter, r *http.Request) {
