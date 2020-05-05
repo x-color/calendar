@@ -720,6 +720,14 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			res:    map[string]interface{}{"message": "bad contents"},
 		},
 		{
+			name:   "invalid user id in shares",
+			cookie: &cookie,
+			calID:  calendarID,
+			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, uuid.New().String()}},
+			code:   http.StatusBadRequest,
+			res:    map[string]interface{}{"message": "bad contents"},
+		},
+		{
 			name:   "not owner",
 			cookie: &cookie,
 			calID:  otherCalendarID,
@@ -838,6 +846,21 @@ func TestNewRouter_Shedule(t *testing.T) {
 			body: map[string]interface{}{
 				"calendar_id": cal.ID,
 				"shares":      []interface{}{cal.ID},
+				"is_all_day":  true,
+			},
+			code: http.StatusBadRequest,
+			res:  map[string]interface{}{"message": "bad contents"},
+		},
+		{
+			name:   "invalid calendar id in shares",
+			cookie: &cookie,
+			body: map[string]interface{}{
+				"calendar_id": cal.ID,
+				"name":        "all day plan",
+				"memo":        "sample text",
+				"color":       "red",
+				"private":     true,
+				"shares":      []interface{}{cal.ID, uuid.New().String()},
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
