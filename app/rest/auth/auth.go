@@ -18,15 +18,11 @@ type msgContent struct {
 	Msg string `json:"message"`
 }
 
-type AuthEndpoint struct {
+type authEndpoint struct {
 	service service.Service
 }
 
-func NewAuthEndpoint(s service.Service) AuthEndpoint {
-	return AuthEndpoint{s}
-}
-
-func (e *AuthEndpoint) SignupHandler(w http.ResponseWriter, r *http.Request) {
+func (e *authEndpoint) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	req := userContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -52,7 +48,7 @@ func (e *AuthEndpoint) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userContent{Name: user.Name})
 }
 
-func (e *AuthEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
+func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	req := userContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -89,7 +85,7 @@ func (e *AuthEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(msgContent{Msg: "signin"})
 }
 
-func (e *AuthEndpoint) SignoutHandler(w http.ResponseWriter, r *http.Request) {
+func (e *authEndpoint) SignoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)

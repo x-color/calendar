@@ -8,15 +8,11 @@ import (
 	cctx "github.com/x-color/calendar/model/ctx"
 )
 
-type UserEndpoint struct {
+type userEndpoint struct {
 	service service.Service
 }
 
-func NewUserEndpoint(s service.Service) UserEndpoint {
-	return UserEndpoint{s}
-}
-
-func (e *UserEndpoint) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+func (e *userEndpoint) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(cctx.UserIDKey).(string)
 	_, err := e.service.RegisterUser(r.Context(), userID)
 	if err != nil {

@@ -26,15 +26,11 @@ type planContent struct {
 	End        int      `json:"end"`
 }
 
-type PlanEndpoint struct {
+type planEndpoint struct {
 	service service.Service
 }
 
-func NewPlanEndpoint(s service.Service) PlanEndpoint {
-	return PlanEndpoint{s}
-}
-
-func (e *PlanEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
+func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	req := planContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -89,7 +85,7 @@ func (e *PlanEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (e *PlanEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) {
+func (e *planEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Context().Value(cctx.UserIDKey).(string)
 	err := e.service.Unschedule(r.Context(), userID, vars["id"])
@@ -107,6 +103,6 @@ func (e *PlanEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (e *PlanEndpoint) ResheduleHandler(w http.ResponseWriter, r *http.Request) {
+func (e *planEndpoint) ResheduleHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(msgContent{"reshedule plan"})
 }

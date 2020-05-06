@@ -20,19 +20,15 @@ type calendarContent struct {
 	Plans  []planContent `json:"plans"`
 }
 
-type CalEndpoint struct {
+type calEndpoint struct {
 	service service.Service
 }
 
-func NewCalEndpoint(s service.Service) CalEndpoint {
-	return CalEndpoint{s}
-}
-
-func (e *CalEndpoint) GetCalendarsHandler(w http.ResponseWriter, r *http.Request) {
+func (e *calEndpoint) GetCalendarsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(msgContent{"get calendars"})
 }
 
-func (e *CalEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request) {
+func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request) {
 	req := calendarContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -60,7 +56,7 @@ func (e *CalEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request
 	})
 }
 
-func (e *CalEndpoint) RemoveCalendarHandler(w http.ResponseWriter, r *http.Request) {
+func (e *calEndpoint) RemoveCalendarHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := r.Context().Value(cctx.UserIDKey).(string)
 	err := e.service.RemoveCalendar(r.Context(), userID, vars["id"])
@@ -81,7 +77,7 @@ func (e *CalEndpoint) RemoveCalendarHandler(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(msgContent{"remove calendar"})
 }
 
-func (e *CalEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Request) {
+func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	req := calendarContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
