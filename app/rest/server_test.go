@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	mauth "github.com/x-color/calendar/auth/model"
 	authInmem "github.com/x-color/calendar/auth/repogitory/inmem"
 	as "github.com/x-color/calendar/auth/service"
 	mcal "github.com/x-color/calendar/calendar/model"
@@ -45,10 +44,10 @@ func dummyCalService() cs.Service {
 func makeSession(authRepo as.Repogitory) (string, string) {
 	userID := uuid.New().String()
 	sessionID := uuid.New().String()
-	authRepo.Session().Create(context.Background(), mauth.Session{
+	authRepo.Session().Create(context.Background(), as.SessionData{
 		ID:      sessionID,
 		UserID:  userID,
-		Expires: time.Now().Add(time.Hour),
+		Expires: time.Now().Add(time.Hour).Unix(),
 	})
 	return userID, sessionID
 }
@@ -170,7 +169,7 @@ func TestNewRouter_Signup(t *testing.T) {
 func TestNewRouter_Signin(t *testing.T) {
 	repo := newAuthRepo()
 	pwd, _ := bcrypt.GenerateFromPassword([]byte("P@ssw0rd"), bcrypt.DefaultCost)
-	repo.User().Create(context.Background(), mauth.User{
+	repo.User().Create(context.Background(), as.UserData{
 		ID:       uuid.New().String(),
 		Name:     "Alice",
 		Password: string(pwd),

@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/x-color/calendar/auth/model"
+	"github.com/x-color/calendar/auth/service"
 	cerror "github.com/x-color/calendar/model/error"
 )
 
 type sessionRepo struct {
 	m        sync.RWMutex
-	sessions []model.Session
+	sessions []service.SessionData
 }
 
-func (r *sessionRepo) Find(ctx context.Context, id string) (model.Session, error) {
+func (r *sessionRepo) Find(ctx context.Context, id string) (service.SessionData, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 
@@ -24,13 +24,13 @@ func (r *sessionRepo) Find(ctx context.Context, id string) (model.Session, error
 		}
 	}
 
-	return model.Session{}, cerror.NewNotFoundError(
+	return service.SessionData{}, cerror.NewNotFoundError(
 		nil,
 		fmt.Sprintf("not found session(%v)", id),
 	)
 }
 
-func (r *sessionRepo) FindByUserID(ctx context.Context, userID string) (model.Session, error) {
+func (r *sessionRepo) FindByUserID(ctx context.Context, userID string) (service.SessionData, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 
@@ -40,13 +40,13 @@ func (r *sessionRepo) FindByUserID(ctx context.Context, userID string) (model.Se
 		}
 	}
 
-	return model.Session{}, cerror.NewNotFoundError(
+	return service.SessionData{}, cerror.NewNotFoundError(
 		nil,
 		fmt.Sprintf("not found user(%v) session", userID),
 	)
 }
 
-func (r *sessionRepo) Create(ctx context.Context, session model.Session) error {
+func (r *sessionRepo) Create(ctx context.Context, session service.SessionData) error {
 	r.m.RLock()
 	for _, s := range r.sessions {
 		if session.ID == s.ID {

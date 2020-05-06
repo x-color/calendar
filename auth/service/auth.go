@@ -12,23 +12,6 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-type Repogitory interface {
-	User() UserRepogitory
-	Session() SessionRepogitory
-}
-
-type UserRepogitory interface {
-	FindByName(ctx context.Context, name string) (model.User, error)
-	Create(ctx context.Context, user model.User) error
-}
-
-type SessionRepogitory interface {
-	Find(ctx context.Context, id string) (model.Session, error)
-	FindByUserID(ctx context.Context, userID string) (model.Session, error)
-	Create(ctx context.Context, session model.Session) error
-	Delete(ctx context.Context, id string) error
-}
-
 type Service struct {
 	repo Repogitory
 	log  logging.Logger
@@ -81,7 +64,7 @@ func (s *Service) signup(ctx context.Context, name, password string) (model.User
 	}
 
 	user := model.NewUser(name, hash)
-	err = s.repo.User().Create(ctx, user)
+	err = s.repo.User().Create(ctx, newUserData(user))
 	if err != nil {
 		return model.User{}, err
 	}
@@ -138,7 +121,7 @@ func (s *Service) signin(ctx context.Context, name, password string) (model.Sess
 	}
 
 	session := model.NewSession(user.ID, time.Now().AddDate(0, 1, 0))
-	err = s.repo.Session().Create(ctx, session)
+	err = s.repo.Session().Create(ctx, newSessionData(session))
 	if err != nil {
 		return model.Session{}, err
 	}
@@ -201,7 +184,7 @@ func (s *Service) authorize(ctx context.Context, sessionID string) (string, erro
 		return "", err
 	}
 
-	if time.Now().After(session.Expires) {
+	if time.Now().After(session.model().Expires) {
 		return "", cerror.NewAuthorizationError(
 			nil,
 			fmt.Sprintf("session(%v) is already expired", session.ID),

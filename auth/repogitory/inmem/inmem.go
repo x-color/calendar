@@ -3,7 +3,6 @@ package inmem
 import (
 	"sync"
 
-	"github.com/x-color/calendar/auth/model"
 	"github.com/x-color/calendar/auth/service"
 )
 
@@ -23,11 +22,11 @@ func (m *inmem) Session() service.SessionRepogitory {
 func NewRepogitory() inmem {
 	u := userRepo{
 		m:     sync.RWMutex{},
-		users: []model.User{},
+		users: []service.UserData{},
 	}
 	s := sessionRepo{
 		m:        sync.RWMutex{},
-		sessions: []model.Session{},
+		sessions: []service.SessionData{},
 	}
 	return inmem{
 		userRepo:    u,
