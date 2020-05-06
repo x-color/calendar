@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/x-color/calendar/calendar/model"
+	"github.com/x-color/calendar/calendar/service"
 	cerror "github.com/x-color/calendar/model/error"
 )
 
 type calendarRepo struct {
 	m         sync.RWMutex
-	calendars []model.Calendar
+	calendars []service.CalendarData
 }
 
-func (r *calendarRepo) Find(ctx context.Context, id string) (model.Calendar, error) {
+func (r *calendarRepo) Find(ctx context.Context, id string) (service.CalendarData, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	for _, c := range r.calendars {
@@ -22,13 +22,13 @@ func (r *calendarRepo) Find(ctx context.Context, id string) (model.Calendar, err
 			return c, nil
 		}
 	}
-	return model.Calendar{}, cerror.NewNotFoundError(
+	return service.CalendarData{}, cerror.NewNotFoundError(
 		nil,
 		fmt.Sprintf("not found calendar(%v)", id),
 	)
 }
 
-func (r *calendarRepo) Create(ctx context.Context, cal model.Calendar) error {
+func (r *calendarRepo) Create(ctx context.Context, cal service.CalendarData) error {
 	r.m.RLock()
 	for _, c := range r.calendars {
 		if c.ID == cal.ID {
@@ -65,7 +65,7 @@ func (r *calendarRepo) Delete(ctx context.Context, id string) error {
 	)
 }
 
-func (r *calendarRepo) Update(ctx context.Context, cal model.Calendar) error {
+func (r *calendarRepo) Update(ctx context.Context, cal service.CalendarData) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	for i, c := range r.calendars {

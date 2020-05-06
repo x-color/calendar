@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/x-color/calendar/calendar/model"
+	"github.com/x-color/calendar/calendar/service"
 	cerror "github.com/x-color/calendar/model/error"
 )
 
 type planRepo struct {
 	m     sync.RWMutex
-	plans []model.Plan
+	plans []service.PlanData
 }
 
-func (r *planRepo) Find(ctx context.Context, id string) (model.Plan, error) {
+func (r *planRepo) Find(ctx context.Context, id string) (service.PlanData, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	for _, p := range r.plans {
@@ -22,13 +22,13 @@ func (r *planRepo) Find(ctx context.Context, id string) (model.Plan, error) {
 			return p, nil
 		}
 	}
-	return model.Plan{}, cerror.NewNotFoundError(
+	return service.PlanData{}, cerror.NewNotFoundError(
 		nil,
 		fmt.Sprintf("not found plan(%v)", id),
 	)
 }
 
-func (r *planRepo) Create(ctx context.Context, plan model.Plan) error {
+func (r *planRepo) Create(ctx context.Context, plan service.PlanData) error {
 	r.m.RLock()
 	for _, c := range r.plans {
 		if c.ID == plan.ID {
@@ -65,7 +65,7 @@ func (r *planRepo) Delete(ctx context.Context, id string) error {
 	)
 }
 
-func (r *planRepo) Update(ctx context.Context, plan model.Plan) error {
+func (r *planRepo) Update(ctx context.Context, plan service.PlanData) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	for i, c := range r.plans {

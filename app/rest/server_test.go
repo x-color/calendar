@@ -62,7 +62,14 @@ func makeCalendar(calRepo cs.Repogitory, ownerID string, shares ...string) mcal.
 		Plans:  []mcal.Plan{},
 		Shares: append(shares, ownerID),
 	}
-	calRepo.Calendar().Create(context.Background(), cal)
+	calData := cs.CalendarData{
+		ID:     cal.ID,
+		Name:   "My plans",
+		UserID: ownerID,
+		Color:  "red",
+		Shares: append(shares, ownerID),
+	}
+	calRepo.Calendar().Create(context.Background(), calData)
 	return cal
 }
 
@@ -72,13 +79,22 @@ func makePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...strin
 		CalendarID: calendarID,
 		UserID:     ownerID,
 		Name:       "My plan",
-		Color:      mcal.RED,
+		Color:      "red",
 		Shares:     append(shares, calendarID),
 		Period: mcal.Period{
 			IsAllDay: true,
 		},
 	}
-	calRepo.Plan().Create(context.Background(), plan)
+	planData := cs.PlanData{
+		ID:         plan.ID,
+		CalendarID: calendarID,
+		UserID:     ownerID,
+		Name:       "My plan",
+		Color:      "red",
+		Shares:     append(shares, calendarID),
+		IsAllDay:   true,
+	}
+	calRepo.Plan().Create(context.Background(), planData)
 	return plan
 }
 
@@ -368,7 +384,7 @@ func TestNewRouter_UserCheckerMiddleware(t *testing.T) {
 	userID, sessionID := makeSession(authRepo)
 	_, sessionID2 := makeSession(authRepo)
 	calRepo := newCalRepo()
-	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
 
 	l := newLogger()
 	as := as.NewService(authRepo, l)
@@ -494,7 +510,7 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
-	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
 
 	l := newLogger()
 	as := as.NewService(authRepo, l)
@@ -563,21 +579,19 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
+	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
+	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     calendarID,
 		Name:   "My plans",
 		UserID: userID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
+		Color:  "red",
 		Shares: []string{userID},
 	})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
+	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     otherCalID,
 		Name:   "Work plans",
 		UserID: otherID,
-		Color:  mcal.YELLOW,
-		Plans:  []mcal.Plan{},
+		Color:  "yellow",
 		Shares: []string{otherID, userID},
 	})
 
@@ -668,21 +682,19 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 	calRepo := newCalRepo()
 	calendarID := uuid.New().String()
 	otherCalendarID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
+	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
+	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     calendarID,
 		Name:   "My plans",
 		UserID: userID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
+		Color:  "red",
 		Shares: []string{userID},
 	})
-	calRepo.Calendar().Create(context.Background(), mcal.Calendar{
+	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     otherCalendarID,
 		Name:   "My plans",
 		UserID: otherID,
-		Color:  mcal.RED,
-		Plans:  []mcal.Plan{},
+		Color:  "red",
 		Shares: []string{otherID, userID},
 	})
 	l := newLogger()
@@ -777,7 +789,7 @@ func TestNewRouter_Shedule(t *testing.T) {
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
 	calRepo := newCalRepo()
-	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
 	cal := makeCalendar(calRepo, userID)
 	otherCal := makeCalendar(calRepo, otherID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)
@@ -979,7 +991,7 @@ func TestNewRouter_Unshedule(t *testing.T) {
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
 	calRepo := newCalRepo()
-	calRepo.CalUser().Create(context.Background(), mcal.User{userID})
+	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
 	cal := makeCalendar(calRepo, userID, otherID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)
 	otherCal := makeCalendar(calRepo, otherID)

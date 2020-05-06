@@ -78,7 +78,7 @@ func (s *Service) schedule(ctx context.Context, planPram model.Plan) (model.Plan
 		planPram.Period,
 	)
 
-	err = s.repo.Plan().Create(ctx, plan)
+	err = s.repo.Plan().Create(ctx, newPlanData(plan))
 	if err != nil {
 		return model.Plan{}, err
 	}
@@ -119,7 +119,7 @@ func (s *Service) unschedule(ctx context.Context, userID, id string) error {
 	}
 
 	if userID != plan.UserID {
-		return s.unsharePlan(ctx, userID, plan)
+		return s.unsharePlan(ctx, userID, plan.model())
 	}
 
 	return s.repo.Plan().Delete(ctx, id)
@@ -145,5 +145,5 @@ func (s *Service) unsharePlan(ctx context.Context, userID string, plan model.Pla
 		)
 	}
 
-	return s.repo.Plan().Update(ctx, plan)
+	return s.repo.Plan().Update(ctx, newPlanData(plan))
 }

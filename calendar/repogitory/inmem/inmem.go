@@ -3,7 +3,6 @@ package inmem
 import (
 	"sync"
 
-	"github.com/x-color/calendar/calendar/model"
 	"github.com/x-color/calendar/calendar/service"
 )
 
@@ -28,15 +27,15 @@ func (m *inmem) CalUser() service.UserRepogitory {
 func NewRepogitory() inmem {
 	c := calendarRepo{
 		m:         sync.RWMutex{},
-		calendars: []model.Calendar{},
+		calendars: []service.CalendarData{},
 	}
 	p := planRepo{
 		m:     sync.RWMutex{},
-		plans: []model.Plan{},
+		plans: []service.PlanData{},
 	}
 	cu := calUserRepo{
 		m:     sync.RWMutex{},
-		users: []model.User{},
+		users: []service.UserData{},
 	}
 	return inmem{
 		calendarRepo: c,

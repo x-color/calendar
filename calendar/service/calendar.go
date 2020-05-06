@@ -38,7 +38,7 @@ func (s *Service) makeCalendar(ctx context.Context, userID, name, color string) 
 
 	cal := model.NewCalendar(userID, name, c)
 
-	err = s.repo.Calendar().Create(ctx, cal)
+	err = s.repo.Calendar().Create(ctx, newCalendarData(cal))
 	if err != nil {
 		return model.Calendar{}, err
 	}
@@ -75,7 +75,7 @@ func (s *Service) removeCalendar(ctx context.Context, userID, id string) error {
 
 	// User is not owner of the model.
 	if userID != cal.UserID {
-		return s.unshareCalendar(ctx, userID, cal)
+		return s.unshareCalendar(ctx, userID, cal.model())
 	}
 
 	return s.repo.Calendar().Delete(ctx, id)
@@ -90,7 +90,7 @@ func (s *Service) unshareCalendar(ctx context.Context, userID string, cal model.
 			} else {
 				cal.Shares = append(cal.Shares[:i], cal.Shares[i+1:]...)
 			}
-			err := s.repo.Calendar().Update(ctx, cal)
+			err := s.repo.Calendar().Update(ctx, newCalendarData(cal))
 			if err != nil {
 				return err
 			}
@@ -160,5 +160,5 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, cal model.C
 		)
 	}
 
-	return s.repo.Calendar().Update(ctx, cal)
+	return s.repo.Calendar().Update(ctx, newCalendarData(cal))
 }
