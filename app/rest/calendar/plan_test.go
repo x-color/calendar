@@ -46,9 +46,7 @@ func makePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...strin
 		Name:       "My plan",
 		Color:      "red",
 		Shares:     append(shares, calendarID),
-		Period: mcal.Period{
-			IsAllDay: true,
-		},
+		Period:     mcal.AllDay,
 	}
 	planData := cs.PlanData{
 		ID:         plan.ID,
