@@ -6,8 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/x-color/calendar/app/rest/middlewares"
+	as "github.com/x-color/calendar/auth/service"
 	"github.com/x-color/calendar/calendar/model"
 	"github.com/x-color/calendar/calendar/service"
+	cs "github.com/x-color/calendar/calendar/service"
 	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
 )
@@ -121,4 +124,16 @@ func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	json.NewEncoder(w).Encode(msgContent{"change calendar"})
+}
+
+func NewCalendarRouter(r *mux.Router, calService cs.Service, authService as.Service) {
+	e := calEndpoint{calService}
+	r.Use(middlewares.ReqIDMiddleware)
+	r.Use(middlewares.ResponseHeaderMiddleware)
+	r.Use(middlewares.AuthorizationMiddleware(authService))
+	r.Use(userCheckerMiddleware(calService))
+	r.HandleFunc("", e.GetCalendarsHandler).Methods(http.MethodGet)
+	r.HandleFunc("", e.MakeCalendarHandler).Methods(http.MethodPost)
+	r.HandleFunc("/{id}", e.RemoveCalendarHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/{id}", e.ChangeCalendarHandler).Methods(http.MethodPatch)
 }

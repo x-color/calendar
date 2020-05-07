@@ -4,52 +4,22 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/auth"
-	"github.com/x-color/calendar/auth/repogitory/inmem"
+	"github.com/x-color/calendar/app/rest/testutils"
 	as "github.com/x-color/calendar/auth/service"
-	cs "github.com/x-color/calendar/calendar/service"
-	"github.com/x-color/calendar/logging"
-	"github.com/x-color/calendar/testutils"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func newAuthRepo() as.Repogitory {
-	r := inmem.NewRepogitory()
-	return &r
-}
-
-func newLogger() logging.Logger {
-	l := logging.NewLogger(ioutil.Discard)
-	return &l
-}
-
-func dummyCalService() cs.Service {
-	return cs.Service{}
-}
-
-func makeSession(authRepo as.Repogitory) (string, string) {
-	userID := uuid.New().String()
-	sessionID := uuid.New().String()
-	authRepo.Session().Create(context.Background(), as.SessionData{
-		ID:      sessionID,
-		UserID:  userID,
-		Expires: time.Now().Add(time.Hour).Unix(),
-	})
-	return userID, sessionID
-}
-
 func TestNewRouter_Signup(t *testing.T) {
-	repo := newAuthRepo()
-	l := newLogger()
+	repo := testutils.NewAuthRepo()
+	l := testutils.NewLogger()
 	authService := as.NewService(repo, l)
 	r := mux.NewRouter()
 	NewRouter(r.PathPrefix("/auth").Subrouter(), authService)
@@ -112,7 +82,7 @@ func TestNewRouter_Signup(t *testing.T) {
 }
 
 func TestNewRouter_Signin(t *testing.T) {
-	repo := newAuthRepo()
+	repo := testutils.NewAuthRepo()
 	pwd, _ := bcrypt.GenerateFromPassword([]byte("P@ssw0rd"), bcrypt.DefaultCost)
 	repo.User().Create(context.Background(), as.UserData{
 		ID:       uuid.New().String(),
@@ -120,7 +90,7 @@ func TestNewRouter_Signin(t *testing.T) {
 		Password: string(pwd),
 	})
 
-	l := newLogger()
+	l := testutils.NewLogger()
 	authService := as.NewService(repo, l)
 	r := mux.NewRouter()
 	NewRouter(r.PathPrefix("/auth").Subrouter(), authService)
@@ -183,10 +153,10 @@ func TestNewRouter_Signin(t *testing.T) {
 }
 
 func TestNewRouter_Signout(t *testing.T) {
-	repo := newAuthRepo()
-	_, sessionID := makeSession(repo)
+	repo := testutils.NewAuthRepo()
+	_, sessionID := testutils.MakeSession(repo)
 
-	l := newLogger()
+	l := testutils.NewLogger()
 	authService := as.NewService(repo, l)
 	r := mux.NewRouter()
 	NewRouter(r.PathPrefix("/auth").Subrouter(), authService)
