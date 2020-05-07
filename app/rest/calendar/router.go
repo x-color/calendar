@@ -13,6 +13,8 @@ import (
 
 func NewCalendarRouter(r *mux.Router, calService cs.Service, authService as.Service) {
 	e := calEndpoint{calService}
+	r.Use(middlewares.ReqIDMiddleware)
+	r.Use(middlewares.ResponseHeaderMiddleware)
 	r.Use(middlewares.AuthorizationMiddleware(authService))
 	r.Use(userCheckerMiddleware(calService))
 	r.HandleFunc("", e.GetCalendarsHandler).Methods(http.MethodGet)
@@ -23,6 +25,8 @@ func NewCalendarRouter(r *mux.Router, calService cs.Service, authService as.Serv
 
 func NewPlanRouter(r *mux.Router, calService cs.Service, authService as.Service) {
 	e := planEndpoint{calService}
+	r.Use(middlewares.ReqIDMiddleware)
+	r.Use(middlewares.ResponseHeaderMiddleware)
 	r.Use(middlewares.AuthorizationMiddleware(authService))
 	r.Use(userCheckerMiddleware(calService))
 	r.HandleFunc("", e.ScheduleHandler).Methods(http.MethodPost)
@@ -32,6 +36,8 @@ func NewPlanRouter(r *mux.Router, calService cs.Service, authService as.Service)
 
 func NewUserRouter(r *mux.Router, calService cs.Service, authService as.Service) {
 	e := userEndpoint{calService}
+	r.Use(middlewares.ReqIDMiddleware)
+	r.Use(middlewares.ResponseHeaderMiddleware)
 	r.Use(middlewares.AuthorizationMiddleware(authService))
 	r.HandleFunc("", e.RegisterHandler).Methods(http.MethodPost)
 }
