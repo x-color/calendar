@@ -21,7 +21,7 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
-	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
 
 	l := testutils.NewLogger()
 	authService := as.NewService(authRepo, l)
@@ -96,7 +96,7 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 	userID, sessionID := testutils.MakeSession(authRepo)
 	_, sessionID2 := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
-	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
 
 	l := testutils.NewLogger()
 	authService := as.NewService(authRepo, l)
@@ -168,7 +168,7 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
-	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
 
 	l := testutils.NewLogger()
 	authService := as.NewService(authRepo, l)
@@ -238,7 +238,7 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 	calRepo := testutils.NewCalRepo()
 	calendarID := uuid.New().String()
 	otherCalID := uuid.New().String()
-	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
 	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     calendarID,
 		Name:   "My plans",
@@ -340,8 +340,8 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 	userID, sessionID := testutils.MakeSession(authRepo)
 	otherID := uuid.New().String()
 	calRepo := testutils.NewCalRepo()
-	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
-	calRepo.CalUser().Create(context.Background(), cs.UserData{otherID})
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{otherID})
 	cal := makeCalendar(calRepo, userID)
 	cal2 := makeCalendar(calRepo, userID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)

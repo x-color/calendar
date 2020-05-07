@@ -34,7 +34,7 @@ func (s *Service) registerUser(ctx context.Context, id string) (model.User, erro
 	}
 
 	user := model.NewUser(id)
-	err := s.repo.CalUser().Create(ctx, newUserData(user))
+	err := s.repo.User().Create(ctx, newUserData(user))
 	if err != nil && !errors.Is(err, cerror.ErrDuplication) {
 		return model.User{}, err
 	}
@@ -65,7 +65,7 @@ func (s *Service) checkRegistration(ctx context.Context, id string) error {
 		)
 	}
 
-	_, err := s.repo.CalUser().Find(ctx, id)
+	_, err := s.repo.User().Find(ctx, id)
 	if errors.Is(err, cerror.ErrNotFound) {
 		return cerror.NewAuthorizationError(
 			err,

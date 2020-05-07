@@ -13,7 +13,7 @@ type Repogitory interface {
 	// TxRollback()
 	Calendar() CalendarRepogitory
 	Plan() PlanRepogitory
-	CalUser() UserRepogitory
+	User() UserRepogitory
 }
 
 type CalendarRepogitory interface {

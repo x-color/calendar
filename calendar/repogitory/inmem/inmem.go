@@ -9,7 +9,7 @@ import (
 type inmem struct {
 	calendarRepo calendarRepo
 	planRepo     planRepo
-	calUserRepo  calUserRepo
+	userRepo     userRepo
 }
 
 func (m *inmem) Calendar() service.CalendarRepogitory {
@@ -20,8 +20,8 @@ func (m *inmem) Plan() service.PlanRepogitory {
 	return &m.planRepo
 }
 
-func (m *inmem) CalUser() service.UserRepogitory {
-	return &m.calUserRepo
+func (m *inmem) User() service.UserRepogitory {
+	return &m.userRepo
 }
 
 func NewRepogitory() inmem {
@@ -33,13 +33,13 @@ func NewRepogitory() inmem {
 		m:     sync.RWMutex{},
 		plans: []service.PlanData{},
 	}
-	cu := calUserRepo{
+	u := userRepo{
 		m:     sync.RWMutex{},
 		users: []service.UserData{},
 	}
 	return inmem{
 		calendarRepo: c,
 		planRepo:     p,
-		calUserRepo:  cu,
+		userRepo:     u,
 	}
 }

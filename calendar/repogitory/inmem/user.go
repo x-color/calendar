@@ -9,12 +9,12 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-type calUserRepo struct {
+type userRepo struct {
 	m     sync.RWMutex
 	users []service.UserData
 }
 
-func (r *calUserRepo) Find(ctx context.Context, id string) (service.UserData, error) {
+func (r *userRepo) Find(ctx context.Context, id string) (service.UserData, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 	for _, u := range r.users {
@@ -28,7 +28,7 @@ func (r *calUserRepo) Find(ctx context.Context, id string) (service.UserData, er
 	)
 }
 
-func (r *calUserRepo) Create(ctx context.Context, user service.UserData) error {
+func (r *userRepo) Create(ctx context.Context, user service.UserData) error {
 	r.m.RLock()
 	for _, c := range r.users {
 		if c.ID == user.ID {
