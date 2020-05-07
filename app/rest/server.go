@@ -24,9 +24,7 @@ func StartServer(authService as.Service, calService cs.Service, l logging.Logger
 func newRouter(authService as.Service, calService cs.Service, l logging.Logger) *mux.Router {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.NotFoundHandler()
-	r.Use(middlewares.ReqIDMiddleware)
 	r.Use(middlewares.LoggingMiddleware(l))
-	r.Use(middlewares.ResponseHeaderMiddleware)
 
 	ar := r.PathPrefix("/auth").Subrouter()
 	ase.NewRouter(ar, authService)

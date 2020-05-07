@@ -1,4 +1,4 @@
-package rest
+package calendar_test
 
 import (
 	"bytes"
@@ -11,15 +11,16 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	. "github.com/x-color/calendar/app/rest/calendar"
 	authInmem "github.com/x-color/calendar/auth/repogitory/inmem"
 	as "github.com/x-color/calendar/auth/service"
 	mcal "github.com/x-color/calendar/calendar/model"
 	calInmem "github.com/x-color/calendar/calendar/repogitory/inmem"
 	cs "github.com/x-color/calendar/calendar/service"
 	"github.com/x-color/calendar/logging"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/x-color/calendar/testutils"
 )
 
 func newAuthRepo() as.Repogitory {
@@ -97,229 +98,16 @@ func makePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...strin
 	return plan
 }
 
-func ignoreKey(key string) cmp.Option {
-	return cmpopts.IgnoreMapEntries(func(k string, t interface{}) bool {
-		return k == key
-	})
-}
-
-func TestNewRouter_Signup(t *testing.T) {
-	repo := newAuthRepo()
-	l := newLogger()
-	as := as.NewService(repo, l)
-	r := newRouter(as, dummyCalService(), l)
-
-	testcases := []struct {
-		name string
-		body map[string]string
-		code int
-		res  map[string]string
-	}{
-		{
-			name: "invalid password",
-			body: map[string]string{"name": "Alice", "password": "Password"},
-			code: http.StatusBadRequest,
-			res:  map[string]string{"message": "bad contents"},
-		},
-		{
-			name: "invalid name",
-			body: map[string]string{"name": "", "password": "P@ssw0rd"},
-			code: http.StatusBadRequest,
-			res:  map[string]string{"message": "bad contents"},
-		},
-		{
-			name: "signup new user",
-			body: map[string]string{"name": "Alice", "password": "P@ssw0rd"},
-			code: http.StatusOK,
-			res:  map[string]string{"name": "Alice", "password": ""},
-		},
-		{
-			name: "user already exist",
-			body: map[string]string{"name": "Alice", "password": "P@ssw0rd"},
-			code: http.StatusConflict,
-			res:  map[string]string{"message": "user already exist"},
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			body, _ := json.Marshal(tc.body)
-
-			req := httptest.NewRequest(http.MethodPost, "/auth/signup", bytes.NewBuffer(body))
-			rec := httptest.NewRecorder()
-			r.ServeHTTP(rec, req)
-
-			if rec.Code != tc.code {
-				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			var actual map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
-			}
-		})
-	}
-}
-
-func TestNewRouter_Signin(t *testing.T) {
-	repo := newAuthRepo()
-	pwd, _ := bcrypt.GenerateFromPassword([]byte("P@ssw0rd"), bcrypt.DefaultCost)
-	repo.User().Create(context.Background(), as.UserData{
-		ID:       uuid.New().String(),
-		Name:     "Alice",
-		Password: string(pwd),
-	})
-
-	l := newLogger()
-	as := as.NewService(repo, l)
-	r := newRouter(as, dummyCalService(), l)
-
-	testcases := []struct {
-		name    string
-		body    map[string]string
-		code    int
-		res     map[string]string
-		cookies int
-	}{
-		{
-			name: "invalid password",
-			body: map[string]string{"name": "Alice", "password": "p@SSW0RD"},
-			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signin failed"},
-		},
-		{
-			name: "user does not exist",
-			body: map[string]string{"name": "Bob", "password": "P@ssw0rd"},
-			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signin failed"},
-		},
-		{
-			name:    "signin",
-			body:    map[string]string{"name": "Alice", "password": "P@ssw0rd"},
-			code:    http.StatusOK,
-			res:     map[string]string{"message": "signin"},
-			cookies: 1,
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			body, _ := json.Marshal(tc.body)
-
-			req := httptest.NewRequest(http.MethodPost, "/auth/signin", bytes.NewBuffer(body))
-			rec := httptest.NewRecorder()
-			r.ServeHTTP(rec, req)
-
-			if rec.Code != tc.code {
-				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			var actual map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
-			}
-
-			if len(rec.Result().Cookies()) != tc.cookies {
-				t.Errorf("cookies: want %v but %v", expected, actual)
-			}
-		})
-	}
-}
-
-func TestNewRouter_Signout(t *testing.T) {
-	repo := newAuthRepo()
-	_, sessionID := makeSession(repo)
-
-	l := newLogger()
-	as := as.NewService(repo, l)
-	r := newRouter(as, dummyCalService(), l)
-
-	testcases := []struct {
-		name   string
-		cookie *http.Cookie
-		code   int
-		res    map[string]string
-	}{
-		{
-			name:   "no cookie",
-			cookie: nil,
-			code:   http.StatusUnauthorized,
-			res:    map[string]string{"message": "signout failed"},
-		},
-		{
-			name: "invalid cookie",
-			cookie: &http.Cookie{
-				Name:  "session_id",
-				Value: uuid.New().String(),
-			},
-			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signout failed"},
-		},
-		{
-			name: "signout",
-			cookie: &http.Cookie{
-				Name:  "session_id",
-				Value: sessionID,
-			},
-			code: http.StatusOK,
-			res:  map[string]string{"message": "signout"},
-		},
-		{
-			name: "second signout",
-			cookie: &http.Cookie{
-				Name:  "session_id",
-				Value: sessionID,
-			},
-			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signout failed"},
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/auth/signout", nil)
-			if tc.cookie != nil {
-				req.AddCookie(tc.cookie)
-			}
-			rec := httptest.NewRecorder()
-			r.ServeHTTP(rec, req)
-
-			if rec.Code != tc.code {
-				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			var actual map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
-			}
-		})
-	}
-}
-
-func TestNewRouter_AuthoraizationMiddleware(t *testing.T) {
+func TestNewUserRouter_Authoraization(t *testing.T) {
 	authRepo := newAuthRepo()
 	_, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
 
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewUserRouter(r.PathPrefix("/register").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -371,14 +159,14 @@ func TestNewRouter_AuthoraizationMiddleware(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_UserCheckerMiddleware(t *testing.T) {
+func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	_, sessionID2 := makeSession(authRepo)
@@ -386,9 +174,10 @@ func TestNewRouter_UserCheckerMiddleware(t *testing.T) {
 	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
 
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -443,22 +232,23 @@ func TestNewRouter_UserCheckerMiddleware(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_RegisterUser(t *testing.T) {
+func TestNewUserRouter_RegisterUser(t *testing.T) {
 	authRepo := newAuthRepo()
 	_, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
 
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewUserRouter(r.PathPrefix("/register").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -498,23 +288,24 @@ func TestNewRouter_RegisterUser(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_MakeCalendar(t *testing.T) {
+func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	calRepo := newCalRepo()
 	calRepo.CalUser().Create(context.Background(), cs.UserData{userID})
 
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -564,14 +355,14 @@ func TestNewRouter_MakeCalendar(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_RemoveCalendar(t *testing.T) {
+func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
@@ -595,9 +386,10 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 	})
 
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -667,14 +459,14 @@ func TestNewRouter_RemoveCalendar(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_ChangeCalendar(t *testing.T) {
+func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
@@ -697,9 +489,10 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 		Shares: []string{otherID, userID},
 	})
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -776,14 +569,14 @@ func TestNewRouter_ChangeCalendar(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_Shedule(t *testing.T) {
+func TestNewPlanRouter_Shedule(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
@@ -793,9 +586,10 @@ func TestNewRouter_Shedule(t *testing.T) {
 	otherCal := makeCalendar(calRepo, otherID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
@@ -978,14 +772,14 @@ func TestNewRouter_Shedule(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, ignoreKey("id")); d != "" {
+			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
 }
 
-func TestNewRouter_Unshedule(t *testing.T) {
+func TestNewPlanRouter_Unshedule(t *testing.T) {
 	authRepo := newAuthRepo()
 	userID, sessionID := makeSession(authRepo)
 	otherID := uuid.New().String()
@@ -1000,9 +794,10 @@ func TestNewRouter_Unshedule(t *testing.T) {
 	otherPlan := makePlan(calRepo, otherID, otherCal.ID)
 
 	l := newLogger()
-	as := as.NewService(authRepo, l)
-	cs := cs.NewService(calRepo, l)
-	r := newRouter(as, cs, l)
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
 		Name:  "session_id",
