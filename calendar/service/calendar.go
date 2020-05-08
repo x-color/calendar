@@ -104,44 +104,53 @@ func (s *Service) unshareCalendar(ctx context.Context, userID string, cal model.
 	)
 }
 
-func (s *Service) ChangeCalendar(ctx context.Context, userID string, cal model.Calendar) error {
+func (s *Service) ChangeCalendar(ctx context.Context, userID string, calPram model.Calendar) error {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
 
-	err := s.changeCalendar(ctx, userID, cal)
+	err := s.changeCalendar(ctx, userID, calPram)
 
 	if err != nil {
 		s.log.Error(err.Error())
 	} else {
-		s.log.Info(fmt.Sprintf("Change calendar(%v)", cal.ID))
+		s.log.Info(fmt.Sprintf("Change calendar(%v)", calPram.ID))
 	}
 
 	return err
 }
 
-func (s *Service) changeCalendar(ctx context.Context, userID string, cal model.Calendar) error {
-	if cal.ID == "" {
+func (s *Service) changeCalendar(ctx context.Context, userID string, calPram model.Calendar) error {
+	if calPram.ID == "" {
 		return cerror.NewInvalidContentError(
 			nil,
 			"id is empty",
 		)
 	}
 
-	if cal.Name == "" {
+	if calPram.Name == "" {
 		return cerror.NewInvalidContentError(
 			nil,
 			"name is empty",
 		)
 	}
 
-	if !findInStrings(cal.Shares, userID) {
+	if !findInStrings(calPram.Shares, userID) {
 		return cerror.NewInvalidContentError(
 			nil,
 			"owner is not in shares",
 		)
 	}
 
-	c, err := s.repo.Calendar().Find(ctx, cal.ID)
+	for _, uid := range calPram.Shares {
+		if _, err := s.repo.User().Find(ctx, uid); err != nil {
+			return cerror.NewInvalidContentError(
+				nil,
+				"invalid user in shares",
+			)
+		}
+	}
+
+	c, err := s.repo.Calendar().Find(ctx, calPram.ID)
 	if err != nil {
 		return err
 	}
@@ -149,9 +158,9 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, cal model.C
 	if userID != c.UserID {
 		return cerror.NewAuthorizationError(
 			nil,
-			fmt.Sprintf("user(%v) does not permit to change calendar(%v)", userID, cal.ID),
+			fmt.Sprintf("user(%v) does not permit to change calendar(%v)", userID, calPram.ID),
 		)
 	}
 
-	return s.repo.Calendar().Update(ctx, newCalendarData(cal))
+	return s.repo.Calendar().Update(ctx, newCalendarData(calPram))
 }
