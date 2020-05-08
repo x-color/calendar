@@ -58,7 +58,15 @@ func (s *Service) schedule(ctx context.Context, planPram model.Plan) (model.Plan
 		)
 	}
 
-	// TODO: Checking user id in planPram.Shares
+	for _, id := range planPram.Shares {
+		cal, err := s.repo.Calendar().Find(ctx, id)
+		if err != nil || !findInStrings(cal.model().Shares, planPram.UserID) {
+			return model.Plan{}, cerror.NewInvalidContentError(
+				nil,
+				"invalid calendar id in shares",
+			)
+		}
+	}
 
 	plan := model.NewPlan(
 		planPram.CalendarID,
