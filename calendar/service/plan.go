@@ -51,14 +51,7 @@ func (s *Service) schedule(ctx context.Context, planPram model.Plan) (model.Plan
 		return model.Plan{}, err
 	}
 
-	in := false
-	for _, u := range cal.Shares {
-		if u == planPram.UserID {
-			in = true
-			break
-		}
-	}
-	if !in {
+	if !findInStrings(cal.Shares, planPram.UserID) {
 		return model.Plan{}, cerror.NewAuthorizationError(
 			nil,
 			fmt.Sprintf("user(%v) does not permit to access the calendar(%v)", planPram.UserID, planPram.CalendarID),
@@ -126,23 +119,18 @@ func (s *Service) unschedule(ctx context.Context, userID, id string) error {
 }
 
 func (s *Service) unsharePlan(ctx context.Context, userID string, plan model.Plan) error {
-	in := false
-	for i, u := range plan.Shares {
-		if userID == u {
-			in = true
-			if i == len(plan.Shares) {
-				plan.Shares = plan.Shares[:i]
-			} else {
-				plan.Shares = append(plan.Shares[:i], plan.Shares[i+1:]...)
-			}
-			break
-		}
-	}
-	if !in {
+	i := indexInStrings(plan.Shares, userID)
+	if i == -1 {
 		return cerror.NewAuthorizationError(
 			nil,
 			fmt.Sprintf("user(%v) does not permit to access the plan(%v)", userID, plan.ID),
 		)
+	}
+
+	if i == len(plan.Shares) {
+		plan.Shares = plan.Shares[:i]
+	} else {
+		plan.Shares = append(plan.Shares[:i], plan.Shares[i+1:]...)
 	}
 
 	return s.repo.Plan().Update(ctx, newPlanData(plan))

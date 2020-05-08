@@ -134,14 +134,7 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, cal model.C
 		)
 	}
 
-	in := false
-	for _, uid := range cal.Shares {
-		if userID == uid {
-			in = true
-			break
-		}
-	}
-	if !in {
+	if !findInStrings(cal.Shares, userID) {
 		return cerror.NewInvalidContentError(
 			nil,
 			"owner is not in shares",
