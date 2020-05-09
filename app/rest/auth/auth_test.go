@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/auth"
@@ -28,31 +27,26 @@ func TestNewRouter_Signup(t *testing.T) {
 		name string
 		body map[string]string
 		code int
-		res  map[string]string
 	}{
 		{
 			name: "invalid password",
 			body: map[string]string{"name": "Alice", "password": "Password"},
 			code: http.StatusBadRequest,
-			res:  map[string]string{"message": "bad contents"},
 		},
 		{
 			name: "invalid name",
 			body: map[string]string{"name": "", "password": "P@ssw0rd"},
 			code: http.StatusBadRequest,
-			res:  map[string]string{"message": "bad contents"},
 		},
 		{
 			name: "signup new user",
 			body: map[string]string{"name": "Alice", "password": "P@ssw0rd"},
-			code: http.StatusOK,
-			res:  map[string]string{"name": "Alice", "password": ""},
+			code: http.StatusNoContent,
 		},
 		{
 			name: "user already exist",
 			body: map[string]string{"name": "Alice", "password": "P@ssw0rd"},
 			code: http.StatusConflict,
-			res:  map[string]string{"message": "user already exist"},
 		},
 	}
 
@@ -66,16 +60,6 @@ func TestNewRouter_Signup(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			var actual map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
@@ -99,26 +83,22 @@ func TestNewRouter_Signin(t *testing.T) {
 		name    string
 		body    map[string]string
 		code    int
-		res     map[string]string
 		cookies int
 	}{
 		{
 			name: "invalid password",
 			body: map[string]string{"name": "Alice", "password": "p@SSW0RD"},
 			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signin failed"},
 		},
 		{
 			name: "user does not exist",
 			body: map[string]string{"name": "Bob", "password": "P@ssw0rd"},
 			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signin failed"},
 		},
 		{
 			name:    "signin",
 			body:    map[string]string{"name": "Alice", "password": "P@ssw0rd"},
-			code:    http.StatusOK,
-			res:     map[string]string{"message": "signin"},
+			code:    http.StatusNoContent,
 			cookies: 1,
 		},
 	}
@@ -135,18 +115,8 @@ func TestNewRouter_Signin(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			var actual map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
-			}
-
 			if len(rec.Result().Cookies()) != tc.cookies {
-				t.Errorf("cookies: want %v but %v", expected, actual)
+				t.Errorf("cookies: want %v but %v", tc.cookies, rec.Result().Cookies())
 			}
 		})
 	}
@@ -165,13 +135,11 @@ func TestNewRouter_Signout(t *testing.T) {
 		name   string
 		cookie *http.Cookie
 		code   int
-		res    map[string]string
 	}{
 		{
 			name:   "no cookie",
 			cookie: nil,
 			code:   http.StatusUnauthorized,
-			res:    map[string]string{"message": "signout failed"},
 		},
 		{
 			name: "invalid cookie",
@@ -180,7 +148,6 @@ func TestNewRouter_Signout(t *testing.T) {
 				Value: uuid.New().String(),
 			},
 			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signout failed"},
 		},
 		{
 			name: "signout",
@@ -188,8 +155,7 @@ func TestNewRouter_Signout(t *testing.T) {
 				Name:  "session_id",
 				Value: sessionID,
 			},
-			code: http.StatusOK,
-			res:  map[string]string{"message": "signout"},
+			code: http.StatusNoContent,
 		},
 		{
 			name: "second signout",
@@ -198,7 +164,6 @@ func TestNewRouter_Signout(t *testing.T) {
 				Value: sessionID,
 			},
 			code: http.StatusUnauthorized,
-			res:  map[string]string{"message": "signout failed"},
 		},
 	}
 
@@ -213,16 +178,6 @@ func TestNewRouter_Signout(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			var actual map[string]string
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}
