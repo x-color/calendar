@@ -117,7 +117,52 @@ func (e *planEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (e *planEndpoint) ResheduleHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(msgContent{"reshedule plan"})
+	req := planContent{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	color, err := model.ConvertToColor(req.Color)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+
+	planPram := model.Plan{
+		ID:         vars["id"],
+		CalendarID: req.CalendarID,
+		Name:       req.Name,
+		Memo:       req.Memo,
+		Color:      color,
+		Private:    req.Private,
+		Shares:     req.Shares,
+		Period: model.Period{
+			IsAllDay: req.IsAllDay,
+			Begin:    time.Unix(int64(req.Begin), 0),
+			End:      time.Unix(int64(req.End), 0),
+		},
+	}
+
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	_, err = e.service.Reschedule(r.Context(), userID, planPram)
+	if errors.Is(err, cerror.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if errors.Is(err, cerror.ErrInvalidContent) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if errors.Is(err, cerror.ErrAuthorization) {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func NewPlanRouter(r *mux.Router, calService cs.Service, authService as.Service) {

@@ -148,3 +148,90 @@ func (s *Service) unsharePlan(ctx context.Context, userID, calID string, plan mo
 
 	return s.repo.Plan().Update(ctx, newPlanData(plan))
 }
+
+func (s *Service) Reschedule(ctx context.Context, userID string, planPram model.Plan) (model.Plan, error) {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	planPram.UserID = userID
+
+	plan, err := s.reschedule(ctx, planPram)
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Reschedule plan(%v)", plan.ID))
+	}
+
+	return plan, err
+}
+
+func (s *Service) reschedule(ctx context.Context, planPram model.Plan) (model.Plan, error) {
+	if planPram.ID == "" {
+		return model.Plan{}, cerror.NewNotFoundError(
+			nil,
+			"id is empty",
+		)
+	}
+
+	if planPram.Name == "" || planPram.CalendarID == "" || len(planPram.Shares) == 0 {
+		return model.Plan{}, cerror.NewInvalidContentError(
+			nil,
+			"some contents are empty",
+		)
+	}
+
+	if !planPram.Period.IsAllDay && !planPram.Period.Begin.Before(planPram.Period.End) {
+		return model.Plan{}, cerror.NewInvalidContentError(
+			nil,
+			"invalid period",
+		)
+	}
+
+	plan, err := s.repo.Plan().Find(ctx, planPram.ID)
+	if errors.Is(err, cerror.ErrNotFound) {
+		return model.Plan{}, cerror.NewNotFoundError(
+			nil,
+			fmt.Sprintf("not found plan(%v)", planPram.ID),
+		)
+	} else if err != nil {
+		return model.Plan{}, err
+	}
+
+	if planPram.CalendarID != plan.CalendarID {
+		return model.Plan{}, cerror.NewInvalidContentError(
+			nil,
+			fmt.Sprintf("invalid caledar id(%v)", planPram.CalendarID),
+		)
+	}
+
+	if planPram.UserID != plan.UserID {
+		return model.Plan{}, cerror.NewAuthorizationError(
+			nil,
+			fmt.Sprintf("user(%v) does not have permition", planPram.UserID),
+		)
+	}
+
+	if !strs.Contains(planPram.Shares, planPram.CalendarID) {
+		return model.Plan{}, cerror.NewInvalidContentError(
+			nil,
+			"parent calendar id is not in shares",
+		)
+	}
+
+	for _, id := range planPram.Shares {
+		cal, err := s.repo.Calendar().Find(ctx, id)
+		if err != nil || !strs.Contains(cal.model().Shares, planPram.UserID) {
+			return model.Plan{}, cerror.NewInvalidContentError(
+				nil,
+				"invalid calendar id in shares",
+			)
+		}
+	}
+
+	err = s.repo.Plan().Update(ctx, newPlanData(planPram))
+	if err != nil {
+		return model.Plan{}, err
+	}
+
+	return planPram, nil
+}

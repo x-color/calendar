@@ -32,6 +32,7 @@ func NewCalRepo() cs.Repogitory {
 }
 
 func NewLogger() logging.Logger {
+	// l := logging.NewLogger(os.Stdout)
 	l := logging.NewLogger(ioutil.Discard)
 	return &l
 }
