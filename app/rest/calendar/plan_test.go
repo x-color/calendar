@@ -479,7 +479,7 @@ func TestNewPlanRouter_Unshedule(t *testing.T) {
 	otherCal := makeCalendar(calRepo, otherID)
 
 	plan := makePlan(calRepo, userID, cal.ID)
-	sharedPlan := makePlan(calRepo, otherID, sharedCal.ID)
+	sharedPlan := makePlan(calRepo, userID, cal.ID, sharedCal.ID)
 	otherPlan := makePlan(calRepo, otherID, otherCal.ID)
 
 	l := testutils.NewLogger()
@@ -497,37 +497,64 @@ func TestNewPlanRouter_Unshedule(t *testing.T) {
 		name   string
 		cookie *http.Cookie
 		planID string
+		body   map[string]string
 		code   int
 	}{
 		{
 			name:   "invalid plan id",
 			cookie: &cookie,
 			planID: uuid.New().String(),
+			body:   map[string]string{"calendar_id": plan.CalendarID},
 			code:   http.StatusNotFound,
+		},
+		{
+			name:   "invalid contents",
+			cookie: &cookie,
+			planID: plan.ID,
+			body:   map[string]string{},
+			code:   http.StatusBadRequest,
+		},
+		{
+			name:   "invalid calendar id",
+			cookie: &cookie,
+			planID: plan.ID,
+			body:   map[string]string{"calendar_id": uuid.New().String()},
+			code:   http.StatusBadRequest,
+		},
+		{
+			name:   "other calendar id",
+			cookie: &cookie,
+			planID: plan.ID,
+			body:   map[string]string{"calendar_id": otherCal.ID},
+			code:   http.StatusBadRequest,
 		},
 		{
 			name:   "do not permit to access plan",
 			cookie: &cookie,
 			planID: otherPlan.ID,
+			body:   map[string]string{"calendar_id": otherPlan.CalendarID},
 			code:   http.StatusForbidden,
 		},
 		{
 			name:   "unshedule plan",
 			cookie: &cookie,
 			planID: plan.ID,
+			body:   map[string]string{"calendar_id": plan.CalendarID},
 			code:   http.StatusNoContent,
 		},
 		{
 			name:   "unshedule shared plan",
 			cookie: &cookie,
 			planID: sharedPlan.ID,
+			body:   map[string]string{"calendar_id": sharedPlan.CalendarID},
 			code:   http.StatusNoContent,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodDelete, "/plans/"+tc.planID, nil)
+			body, _ := json.Marshal(tc.body)
+			req := httptest.NewRequest(http.MethodDelete, "/plans/"+tc.planID, bytes.NewBuffer(body))
 			if tc.cookie != nil {
 				req.AddCookie(tc.cookie)
 			}

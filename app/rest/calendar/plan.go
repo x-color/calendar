@@ -89,10 +89,20 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *planEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) {
+	req := planContent{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(msgContent{"bad contents"})
+		return
+	}
+
 	vars := mux.Vars(r)
 	userID := r.Context().Value(cctx.UserIDKey).(string)
-	err := e.service.Unschedule(r.Context(), userID, vars["id"])
+	err := e.service.Unschedule(r.Context(), userID, req.CalendarID, vars["id"])
 	if errors.Is(err, cerror.ErrInvalidContent) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if errors.Is(err, cerror.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if errors.Is(err, cerror.ErrAuthorization) {
