@@ -46,14 +46,12 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 			cookie: nil,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusUnauthorized,
-			res:    map[string]interface{}{"message": "unauthorization"},
 		},
 		{
 			name:   "invalid cookie",
 			cookie: &http.Cookie{Name: "session_id", Value: uuid.New().String()},
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusUnauthorized,
-			res:    map[string]interface{}{"message": "unauthorization"},
 		},
 		{
 			name:   "valid cookie",
@@ -76,6 +74,10 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
@@ -126,7 +128,6 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 			cookie: &cookie2,
 			body:   map[string]interface{}{"name": "test", "color": "red"},
 			code:   http.StatusForbidden,
-			res:    map[string]interface{}{"message": "forbidden"},
 		},
 		{
 			name:   "registered user",
@@ -149,6 +150,10 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
@@ -193,7 +198,6 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "", "color": ""},
 			code:   http.StatusBadRequest,
-			res:    map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "make calendar",
@@ -216,6 +220,10 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
@@ -277,35 +285,30 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 			cookie: &cookie,
 			calID:  uuid.New().String(),
 			code:   http.StatusNotFound,
-			res:    map[string]interface{}{"message": "not found"},
 		},
 		{
 			name:   "remove my calendar",
 			cookie: &cookie,
 			calID:  calendarID,
-			code:   http.StatusOK,
-			res:    map[string]interface{}{"message": "remove calendar"},
+			code:   http.StatusNoContent,
 		},
 		{
 			name:   "second remove my calendar",
 			cookie: &cookie,
 			calID:  calendarID,
 			code:   http.StatusNotFound,
-			res:    map[string]interface{}{"message": "not found"},
 		},
 		{
 			name:   "remove other's calendar",
 			cookie: &cookie,
 			calID:  otherCalID,
-			code:   http.StatusOK,
-			res:    map[string]interface{}{"message": "remove calendar"},
+			code:   http.StatusNoContent,
 		},
 		{
 			name:   "remove not shared calendar",
 			cookie: &cookie,
 			calID:  otherCalID,
 			code:   http.StatusForbidden,
-			res:    map[string]interface{}{"message": "unauthorization"},
 		},
 	}
 
@@ -320,6 +323,10 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
@@ -371,7 +378,6 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 			calID:  uuid.New().String(),
 			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusNotFound,
-			res:    map[string]interface{}{"message": "not found"},
 		},
 		{
 			name:   "invalid content",
@@ -379,7 +385,6 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 			calID:  cal.ID,
 			body:   map[string]interface{}{"color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusBadRequest,
-			res:    map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "invalid user id in shares",
@@ -387,7 +392,6 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 			calID:  cal.ID,
 			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, uuid.New().String()}},
 			code:   http.StatusBadRequest,
-			res:    map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "not owner",
@@ -395,15 +399,13 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 			calID:  sharedCal.ID,
 			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
 			code:   http.StatusForbidden,
-			res:    map[string]interface{}{"message": "unauthorization"},
 		},
 		{
 			name:   "change calendar",
 			cookie: &cookie,
 			calID:  cal2.ID,
 			body:   map[string]interface{}{"name": "Renamed", "color": "yellow", "shares": []interface{}{userID, otherID}},
-			code:   http.StatusOK,
-			res:    map[string]interface{}{"message": "change calendar"},
+			code:   http.StatusNoContent,
 		},
 	}
 
@@ -419,6 +421,10 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
