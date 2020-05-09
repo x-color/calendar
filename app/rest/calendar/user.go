@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -21,11 +20,10 @@ func (e *userEndpoint) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := e.service.RegisterUser(r.Context(), userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
-	json.NewEncoder(w).Encode(msgContent{Msg: "register"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func NewUserRouter(r *mux.Router, calService cs.Service, authService as.Service) {
