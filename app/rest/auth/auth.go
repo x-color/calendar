@@ -28,26 +28,22 @@ func (e *authEndpoint) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	req := userContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 
-	user, err := e.service.Signup(r.Context(), req.Name, req.Password)
+	_, err := e.service.Signup(r.Context(), req.Name, req.Password)
 	if errors.Is(err, cerror.ErrInvalidContent) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	} else if errors.Is(err, cerror.ErrDuplication) {
 		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(msgContent{"user already exist"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
-	json.NewEncoder(w).Encode(userContent{Name: user.Name})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,15 +57,12 @@ func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := e.service.Signin(r.Context(), req.Name, req.Password)
 	if errors.Is(err, cerror.ErrInvalidContent) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	} else if errors.Is(err, cerror.ErrAuthorization) {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(msgContent{"signin failed"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
@@ -84,29 +77,26 @@ func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 
-	json.NewEncoder(w).Encode(msgContent{Msg: "signin"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (e *authEndpoint) SignoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(msgContent{"signout failed"})
 		return
 	}
 
 	err = e.service.Signout(r.Context(), cookie.Value)
 	if errors.Is(err, cerror.ErrAuthorization) {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(msgContent{"signout failed"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
-	json.NewEncoder(w).Encode(msgContent{Msg: "signout"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func NewRouter(r *mux.Router, s service.Service) {
