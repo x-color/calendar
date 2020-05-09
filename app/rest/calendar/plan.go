@@ -37,14 +37,12 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	req := planContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 
 	color, err := model.ConvertToColor(req.Color)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 
@@ -66,11 +64,9 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 	plan, err := e.service.Schedule(r.Context(), userID, planPram)
 	if errors.Is(err, cerror.ErrInvalidContent) || errors.Is(err, cerror.ErrAuthorization) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
