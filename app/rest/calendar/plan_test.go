@@ -100,7 +100,6 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusUnauthorized,
-			res:  map[string]interface{}{"message": "unauthorization"},
 		},
 		{
 			name:   "invalid cookie",
@@ -115,7 +114,6 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusUnauthorized,
-			res:  map[string]interface{}{"message": "unauthorization"},
 		},
 		{
 			name:   "valid cookie",
@@ -157,6 +155,10 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
@@ -208,7 +210,6 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 			cookie: &cookie2,
 			body:   map[string]interface{}{"name": "test", "color": "red"},
 			code:   http.StatusForbidden,
-			res:    map[string]interface{}{"message": "forbidden"},
 		},
 		{
 			name:   "registered user",
@@ -251,6 +252,10 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
@@ -303,7 +308,6 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
-			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "do not permit to access calendar",
@@ -318,7 +322,6 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
-			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "not shared calendar",
@@ -333,7 +336,6 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
-			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "invalid content",
@@ -344,7 +346,6 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
-			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "invalid calendar id in shares",
@@ -359,7 +360,6 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusBadRequest,
-			res:  map[string]interface{}{"message": "bad contents"},
 		},
 		{
 			name:   "shedule plan",
@@ -454,6 +454,10 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
 			}
 
 			var actual map[string]interface{}
