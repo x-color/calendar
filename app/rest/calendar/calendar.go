@@ -35,7 +35,6 @@ func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request
 	req := calendarContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 
@@ -43,11 +42,9 @@ func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request
 	cal, err := e.service.MakeCalendar(r.Context(), userID, req.Name, req.Color)
 	if errors.Is(err, cerror.ErrInvalidContent) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
@@ -65,19 +62,16 @@ func (e *calEndpoint) RemoveCalendarHandler(w http.ResponseWriter, r *http.Reque
 	err := e.service.RemoveCalendar(r.Context(), userID, vars["id"])
 	if errors.Is(err, cerror.ErrInvalidContent) || errors.Is(err, cerror.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(msgContent{"not found"})
 		return
 	} else if errors.Is(err, cerror.ErrAuthorization) {
 		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(msgContent{"unauthorization"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
-	json.NewEncoder(w).Encode(msgContent{"remove calendar"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Request) {
@@ -107,23 +101,19 @@ func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Reque
 	err = e.service.ChangeCalendar(r.Context(), userID, cal)
 	if errors.Is(err, cerror.ErrInvalidContent) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	} else if errors.Is(err, cerror.ErrNotFound) {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(msgContent{"not found"})
 		return
 	} else if errors.Is(err, cerror.ErrAuthorization) {
 		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(msgContent{"unauthorization"})
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(msgContent{"internal server error"})
 		return
 	}
 
-	json.NewEncoder(w).Encode(msgContent{"change calendar"})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func NewCalendarRouter(r *mux.Router, calService cs.Service, authService as.Service) {
