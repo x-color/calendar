@@ -7,6 +7,7 @@ import (
 	"github.com/x-color/calendar/calendar/model"
 	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
+	"github.com/x-color/slice/strs"
 )
 
 func (s *Service) MakeCalendar(ctx context.Context, userID, name, color string) (model.Calendar, error) {
@@ -83,25 +84,16 @@ func (s *Service) removeCalendar(ctx context.Context, userID, id string) error {
 }
 
 func (s *Service) unshareCalendar(ctx context.Context, userID string, cal model.Calendar) error {
-	for i, uid := range cal.Shares {
-		if userID == uid {
-			if i == len(cal.Shares)-1 {
-				cal.Shares = cal.Shares[:i]
-			} else {
-				cal.Shares = append(cal.Shares[:i], cal.Shares[i+1:]...)
-			}
-			err := s.repo.Calendar().Update(ctx, newCalendarData(cal))
-			if err != nil {
-				return err
-			}
-			return nil
-		}
+	l, err := strs.RemoveE(cal.Shares, userID)
+	if err != nil {
+		return cerror.NewAuthorizationError(
+			nil,
+			fmt.Sprintf("user(%v) does not permit to delete calendar(%v)", userID, cal.ID),
+		)
 	}
+	cal.Shares = l
 
-	return cerror.NewAuthorizationError(
-		nil,
-		fmt.Sprintf("user(%v) does not permit to delete calendar(%v)", userID, cal.ID),
-	)
+	return s.repo.Calendar().Update(ctx, newCalendarData(cal))
 }
 
 func (s *Service) ChangeCalendar(ctx context.Context, userID string, calPram model.Calendar) error {
@@ -134,7 +126,7 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, calPram mod
 		)
 	}
 
-	if !findInStrings(calPram.Shares, userID) {
+	if !strs.Contains(calPram.Shares, userID) {
 		return cerror.NewInvalidContentError(
 			nil,
 			"owner is not in shares",

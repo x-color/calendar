@@ -8,6 +8,7 @@ import (
 	"github.com/x-color/calendar/calendar/model"
 	cctx "github.com/x-color/calendar/model/ctx"
 	cerror "github.com/x-color/calendar/model/error"
+	"github.com/x-color/slice/strs"
 )
 
 func (s *Service) Schedule(ctx context.Context, userID string, planPram model.Plan) (model.Plan, error) {
@@ -51,7 +52,7 @@ func (s *Service) schedule(ctx context.Context, planPram model.Plan) (model.Plan
 		return model.Plan{}, err
 	}
 
-	if !findInStrings(cal.Shares, planPram.UserID) {
+	if !strs.Contains(cal.Shares, planPram.UserID) {
 		return model.Plan{}, cerror.NewAuthorizationError(
 			nil,
 			fmt.Sprintf("user(%v) does not permit to access the calendar(%v)", planPram.UserID, planPram.CalendarID),
@@ -60,7 +61,7 @@ func (s *Service) schedule(ctx context.Context, planPram model.Plan) (model.Plan
 
 	for _, id := range planPram.Shares {
 		cal, err := s.repo.Calendar().Find(ctx, id)
-		if err != nil || !findInStrings(cal.model().Shares, planPram.UserID) {
+		if err != nil || !strs.Contains(cal.model().Shares, planPram.UserID) {
 			return model.Plan{}, cerror.NewInvalidContentError(
 				nil,
 				"invalid calendar id in shares",
@@ -124,14 +125,14 @@ func (s *Service) unschedule(ctx context.Context, userID, calID, id string) erro
 }
 
 func (s *Service) unsharePlan(ctx context.Context, userID, calID string, plan model.Plan) error {
-	var isRemoved bool
-	plan.Shares, isRemoved = removeInStrings(plan.Shares, calID)
-	if !isRemoved {
+	l, err := strs.RemoveE(plan.Shares, calID)
+	if err != nil {
 		return cerror.NewInvalidContentError(
 			nil,
 			"invalid calendar id",
 		)
 	}
+	plan.Shares = l
 
 	cal, err := s.repo.Calendar().Find(ctx, calID)
 	if err != nil {
