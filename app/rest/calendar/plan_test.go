@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -219,8 +220,8 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 				"color":       "red",
 				"private":     true,
 				"shares":      []interface{}{cal.ID},
-				"begin":       1577836800,
-				"end":         1577869200,
+				"begin":       time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix(),
 			},
 			code: http.StatusOK,
 			res: map[string]interface{}{
@@ -232,8 +233,8 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 				"private":     true,
 				"shares":      []interface{}{cal.ID},
 				"is_all_day":  false,
-				"begin":       float64(1577836800),
-				"end":         float64(1577869200),
+				"begin":       float64(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
+				"end":         float64(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
 			},
 		},
 	}
@@ -370,8 +371,8 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"color":       "red",
 				"private":     true,
 				"shares":      []interface{}{cal.ID, sharedCal.ID},
-				"begin":       1577836800,
-				"end":         1577869200,
+				"begin":       time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix(),
 			},
 			code: http.StatusOK,
 			res: map[string]interface{}{
@@ -383,8 +384,8 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"private":     true,
 				"shares":      []interface{}{cal.ID, sharedCal.ID},
 				"is_all_day":  false,
-				"begin":       float64(1577836800),
-				"end":         float64(1577869200),
+				"begin":       float64(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
+				"end":         float64(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
 			},
 		},
 		{
@@ -555,6 +556,160 @@ func TestNewPlanRouter_Unshedule(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			body, _ := json.Marshal(tc.body)
 			req := httptest.NewRequest(http.MethodDelete, "/plans/"+tc.planID, bytes.NewBuffer(body))
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+		})
+	}
+}
+
+func TestNewPlanRouter_Reschedule(t *testing.T) {
+	authRepo := testutils.NewAuthRepo()
+	userID, sessionID := testutils.MakeSession(authRepo)
+	otherID, otherSessionID := testutils.MakeSession(authRepo)
+	calRepo := testutils.NewCalRepo()
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	cal := makeCalendar(calRepo, userID, otherID)
+	sharedCal := makeCalendar(calRepo, otherID, userID)
+	otherCal := makeCalendar(calRepo, otherID)
+
+	plan := makePlan(calRepo, userID, cal.ID)
+	sharedPlan := makePlan(calRepo, userID, cal.ID, sharedCal.ID)
+	otherPlan := makePlan(calRepo, otherID, otherCal.ID)
+
+	l := testutils.NewLogger()
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		planID string
+		body   map[string]interface{}
+		code   int
+	}{
+		{
+			name:   "invalid plan id",
+			cookie: &cookie,
+			planID: uuid.New().String(),
+			body: map[string]interface{}{
+				"calendar_id": cal.ID,
+				"name":        "renamed",
+				"memo":        "edited text",
+				"color":       "yellow",
+				"private":     false,
+				"shares":      []interface{}{cal.ID},
+				"begin":       time.Date(2020, 5, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 5, 1, 18, 0, 0, 0, time.Local).Unix(),
+			},
+			code: http.StatusNotFound,
+		},
+		{
+			name:   "invalid contents",
+			cookie: &cookie,
+			planID: plan.ID,
+			body:   map[string]interface{}{},
+			code:   http.StatusBadRequest,
+		},
+		{
+			name:   "invalid calendar id",
+			cookie: &cookie,
+			planID: plan.ID,
+			body: map[string]interface{}{
+				"calendar_id": uuid.New().String(),
+				"name":        "renamed",
+				"memo":        "edited text",
+				"color":       "yellow",
+				"private":     false,
+				"shares":      []interface{}{cal.ID},
+				"begin":       time.Date(2020, 5, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 5, 1, 18, 0, 0, 0, time.Local).Unix(),
+			},
+			code: http.StatusBadRequest,
+		},
+		{
+			name:   "other calendar id",
+			cookie: &cookie,
+			planID: plan.ID,
+			body: map[string]interface{}{
+				"calendar_id": otherCal.ID,
+				"name":        "renamed",
+				"memo":        "edited text",
+				"color":       "yellow",
+				"private":     false,
+				"shares":      []interface{}{cal.ID},
+				"begin":       time.Date(2020, 5, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 5, 1, 18, 0, 0, 0, time.Local).Unix(),
+			},
+			code: http.StatusBadRequest,
+		},
+		{
+			name:   "do not permit to access other plan",
+			cookie: &cookie,
+			planID: otherPlan.ID,
+			body: map[string]interface{}{
+				"calendar_id": otherCal.ID,
+				"name":        "renamed",
+				"memo":        "edited text",
+				"color":       "yellow",
+				"private":     false,
+				"shares":      []interface{}{cal.ID},
+				"begin":       time.Date(2020, 5, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 5, 1, 18, 0, 0, 0, time.Local).Unix(),
+			},
+			code: http.StatusForbidden,
+		},
+		{
+			name:   "do not permit to reshcedule shared plan",
+			cookie: &http.Cookie{Name: "session_id", Value: otherSessionID},
+			planID: sharedPlan.ID,
+			body: map[string]interface{}{
+				"calendar_id": sharedCal.ID,
+				"name":        "renamed",
+				"memo":        "edited text",
+				"color":       "yellow",
+				"private":     false,
+				"shares":      []interface{}{cal.ID, sharedCal.ID},
+				"begin":       time.Date(2020, 5, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 5, 1, 18, 0, 0, 0, time.Local).Unix(),
+			},
+			code: http.StatusForbidden,
+		},
+		{
+			name:   "reshedule plan",
+			cookie: &cookie,
+			planID: plan.ID,
+			body: map[string]interface{}{
+				"calendar_id": cal.ID,
+				"name":        "renamed",
+				"memo":        "edited text",
+				"color":       "yellow",
+				"private":     false,
+				"shares":      []interface{}{cal.ID},
+				"begin":       time.Date(2020, 5, 1, 9, 0, 0, 0, time.Local).Unix(),
+				"end":         time.Date(2020, 5, 1, 18, 0, 0, 0, time.Local).Unix(),
+			},
+			code: http.StatusNoContent,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			body, _ := json.Marshal(tc.body)
+			req := httptest.NewRequest(http.MethodPatch, "/plans/"+tc.planID, bytes.NewBuffer(body))
 			if tc.cookie != nil {
 				req.AddCookie(tc.cookie)
 			}
