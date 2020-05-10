@@ -63,6 +63,31 @@ func makePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...strin
 	return plan
 }
 
+func makePrivatePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...string) mcal.Plan {
+	plan := mcal.Plan{
+		ID:         uuid.New().String(),
+		CalendarID: calendarID,
+		UserID:     ownerID,
+		Name:       "My plan",
+		Color:      "red",
+		Private:    true,
+		Shares:     append(shares, calendarID),
+		Period:     mcal.AllDay,
+	}
+	planData := cs.PlanData{
+		ID:         plan.ID,
+		CalendarID: calendarID,
+		UserID:     ownerID,
+		Name:       "My plan",
+		Color:      "red",
+		Private:    true,
+		Shares:     append(shares, calendarID),
+		IsAllDay:   true,
+	}
+	calRepo.Plan().Create(context.Background(), planData)
+	return plan
+}
+
 func TestNewPlanRouter_Authoraization(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)

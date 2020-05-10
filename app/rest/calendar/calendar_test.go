@@ -15,8 +15,41 @@ import (
 	. "github.com/x-color/calendar/app/rest/calendar"
 	"github.com/x-color/calendar/app/rest/testutils"
 	as "github.com/x-color/calendar/auth/service"
+	"github.com/x-color/calendar/calendar/model"
 	cs "github.com/x-color/calendar/calendar/service"
 )
+
+func calModelToContent(cal model.Calendar) CalendarContent {
+	plans := make([]PlanContent, len(cal.Plans))
+	for i, p := range cal.Plans {
+		plans[i] = planModelToContent(p)
+	}
+
+	c := CalendarContent{
+		ID:     cal.ID,
+		Name:   cal.Name,
+		Color:  string(cal.Color),
+		Shares: cal.Shares,
+		Plans:  plans,
+	}
+	return c
+}
+
+func planModelToContent(plan model.Plan) PlanContent {
+	p := PlanContent{
+		ID:         plan.ID,
+		CalendarID: plan.CalendarID,
+		Name:       plan.Name,
+		Memo:       plan.Memo,
+		Color:      string(plan.Color),
+		Private:    plan.Private,
+		Shares:     plan.Shares,
+		IsAllDay:   plan.Period.IsAllDay,
+		Begin:      plan.Period.Begin.Unix(),
+		End:        plan.Period.End.Unix(),
+	}
+	return p
+}
 
 func TestNewCalendarRouter_Authoraization(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
@@ -172,6 +205,94 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 			expected := tc.res
 
 			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
+				t.Errorf("invalid response body: \n%v", d)
+			}
+		})
+	}
+}
+
+func TestNewCalendarRouter_GetCalendars(t *testing.T) {
+	authRepo := testutils.NewAuthRepo()
+	userID, sessionID := testutils.MakeSession(authRepo)
+	otherID, _ := testutils.MakeSession(authRepo)
+	calRepo := testutils.NewCalRepo()
+	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{otherID})
+
+	cal := makeCalendar(calRepo, userID)
+	sharedCal := makeCalendar(calRepo, userID, otherID)
+	sharedOtherCal := makeCalendar(calRepo, otherID, userID)
+	otherCal := makeCalendar(calRepo, otherID)
+
+	plan1 := makePlan(calRepo, userID, cal.ID)
+	plan2 := makePlan(calRepo, otherID, otherCal.ID, sharedOtherCal.ID)
+	plan3 := makePlan(calRepo, userID, cal.ID, sharedCal.ID)
+	plan4 := makePrivatePlan(calRepo, otherID, sharedOtherCal.ID)
+
+	l := testutils.NewLogger()
+	authService := as.NewService(authRepo, l)
+	calendarService := cs.NewService(calRepo, l)
+	r := mux.NewRouter()
+	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
+
+	cookie := http.Cookie{
+		Name:  "session_id",
+		Value: sessionID,
+	}
+
+	plan4.Name = ""
+	plan4.Memo = ""
+	plan4.Shares = []string{sharedOtherCal.ID}
+
+	cal.Plans = []model.Plan{plan1, plan3}
+	sharedCal.Plans = []model.Plan{plan3}
+	sharedOtherCal.Plans = []model.Plan{plan2, plan4}
+	cals := []CalendarContent{
+		calModelToContent(cal),
+		calModelToContent(sharedCal),
+		calModelToContent(sharedOtherCal),
+	}
+
+	testcases := []struct {
+		name   string
+		cookie *http.Cookie
+		code   int
+		res    []CalendarContent
+	}{
+		{
+			name:   "get calendars",
+			cookie: &cookie,
+			code:   http.StatusOK,
+			res:    cals,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/calendars", nil)
+			if tc.cookie != nil {
+				req.AddCookie(tc.cookie)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			if rec.Code != tc.code {
+				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
+			}
+
+			if tc.res == nil {
+				return
+			}
+
+			var actual []CalendarContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
+			}
+			expected := tc.res
+
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
