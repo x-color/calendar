@@ -28,7 +28,7 @@ type calEndpoint struct {
 }
 
 func (e *calEndpoint) GetCalendarsHandler(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(msgContent{"get calendars"})
+	w.WriteHeader(http.StatusOK)
 }
 
 func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,14 +79,12 @@ func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Reque
 	req := calendarContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 
 	color, err := model.ConvertToColor(req.Color)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 

@@ -16,10 +16,6 @@ type userContent struct {
 	Password string `json:"password"`
 }
 
-type msgContent struct {
-	Msg string `json:"message"`
-}
-
 type authEndpoint struct {
 	service service.Service
 }
@@ -50,7 +46,6 @@ func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	req := userContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 

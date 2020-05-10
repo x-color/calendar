@@ -12,10 +12,6 @@ import (
 	"github.com/x-color/calendar/logging"
 )
 
-type msgContent struct {
-	Msg string `json:"message"`
-}
-
 func StartServer(authService as.Service, calService cs.Service, l logging.Logger) {
 	r := newRouter(authService, calService, l)
 	http.ListenAndServe(":8080", r)

@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -11,10 +10,6 @@ import (
 	"github.com/x-color/calendar/logging"
 	cctx "github.com/x-color/calendar/model/ctx"
 )
-
-type msgContent struct {
-	Msg string `json:"message"`
-}
 
 func ReqIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -47,14 +42,12 @@ func AuthorizationMiddleware(service as.Service) mux.MiddlewareFunc {
 			cookie, err := r.Cookie("session_id")
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
-				json.NewEncoder(w).Encode(msgContent{"unauthorization"})
 				return
 			}
 
 			userID, err := service.Authorize(r.Context(), cookie.Value)
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
-				json.NewEncoder(w).Encode(msgContent{"unauthorization"})
 				return
 			}
 			ctx := context.WithValue(r.Context(), cctx.UserIDKey, userID)

@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -16,7 +15,6 @@ func userCheckerMiddleware(service cs.Service) mux.MiddlewareFunc {
 			err := service.CheckRegistration(r.Context(), userID)
 			if err != nil {
 				w.WriteHeader(http.StatusForbidden)
-				json.NewEncoder(w).Encode(msgContent{"forbidden"})
 				return
 			}
 			next.ServeHTTP(w, r)

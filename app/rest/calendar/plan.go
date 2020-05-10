@@ -88,7 +88,6 @@ func (e *planEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) 
 	req := planContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(msgContent{"bad contents"})
 		return
 	}
 
