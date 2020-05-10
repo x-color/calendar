@@ -25,8 +25,8 @@ type PlanContent struct {
 	Private    bool     `json:"private"`
 	Shares     []string `json:"shares"`
 	IsAllDay   bool     `json:"is_all_day"`
-	Begin      int      `json:"begin"`
-	End        int      `json:"end"`
+	Begin      int64    `json:"begin"`
+	End        int64    `json:"end"`
 }
 
 type planEndpoint struct {
@@ -55,8 +55,8 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		Shares:     req.Shares,
 		Period: model.Period{
 			IsAllDay: req.IsAllDay,
-			Begin:    time.Unix(int64(req.Begin), 0),
-			End:      time.Unix(int64(req.End), 0),
+			Begin:    time.Unix(req.Begin, 0),
+			End:      time.Unix(req.End, 0),
 		},
 	}
 
@@ -79,8 +79,8 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		Private:    plan.Private,
 		Shares:     plan.Shares,
 		IsAllDay:   plan.Period.IsAllDay,
-		Begin:      int(plan.Period.Begin.Unix()),
-		End:        int(plan.Period.End.Unix()),
+		Begin:      plan.Period.Begin.Unix(),
+		End:        plan.Period.End.Unix(),
 	})
 }
 
@@ -136,8 +136,8 @@ func (e *planEndpoint) ResheduleHandler(w http.ResponseWriter, r *http.Request) 
 		Shares:     req.Shares,
 		Period: model.Period{
 			IsAllDay: req.IsAllDay,
-			Begin:    time.Unix(int64(req.Begin), 0),
-			End:      time.Unix(int64(req.End), 0),
+			Begin:    time.Unix(req.Begin, 0),
+			End:      time.Unix(req.End, 0),
 		},
 	}
 

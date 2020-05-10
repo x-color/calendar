@@ -233,8 +233,8 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 				Private:    true,
 				Shares:     []string{cal.ID},
 				IsAllDay:   false,
-				Begin:      int(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
-				End:        int(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
+				Begin:      time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix(),
+				End:        time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix(),
 			},
 		},
 	}
@@ -381,8 +381,8 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				Private:    true,
 				Shares:     []string{cal.ID, sharedCal.ID},
 				IsAllDay:   false,
-				Begin:      int(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
-				End:        int(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
+				Begin:      time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix(),
+				End:        time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix(),
 			},
 		},
 		{
