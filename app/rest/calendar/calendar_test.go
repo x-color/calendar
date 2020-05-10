@@ -91,7 +91,7 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -171,7 +171,7 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -245,7 +245,7 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})

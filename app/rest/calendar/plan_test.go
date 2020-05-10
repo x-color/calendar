@@ -166,7 +166,7 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -261,7 +261,7 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -461,7 +461,7 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
