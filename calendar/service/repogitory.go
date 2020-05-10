@@ -21,6 +21,7 @@ type CalendarRepogitory interface {
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, cal CalendarData) error
 	Find(ctx context.Context, id string) (CalendarData, error)
+	FindByUserID(ctx context.Context, userID string) ([]CalendarData, error)
 }
 
 type PlanRepogitory interface {
@@ -28,6 +29,7 @@ type PlanRepogitory interface {
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, plan PlanData) error
 	Find(ctx context.Context, id string) (PlanData, error)
+	FindByCalendarID(ctx context.Context, calID string) ([]PlanData, error)
 }
 
 type UserRepogitory interface {

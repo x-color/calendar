@@ -7,6 +7,7 @@ import (
 
 	"github.com/x-color/calendar/calendar/service"
 	cerror "github.com/x-color/calendar/model/error"
+	"github.com/x-color/slice/strs"
 )
 
 type calendarRepo struct {
@@ -26,6 +27,20 @@ func (r *calendarRepo) Find(ctx context.Context, id string) (service.CalendarDat
 		nil,
 		fmt.Sprintf("not found calendar(%v)", id),
 	)
+}
+
+func (r *calendarRepo) FindByUserID(ctx context.Context, userID string) ([]service.CalendarData, error) {
+	r.m.RLock()
+	defer r.m.RUnlock()
+
+	cals := []service.CalendarData{}
+	for _, c := range r.calendars {
+		if strs.Contains(c.Shares, userID) {
+			cals = append(cals, c)
+		}
+	}
+
+	return cals, nil
 }
 
 func (r *calendarRepo) Create(ctx context.Context, cal service.CalendarData) error {

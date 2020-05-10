@@ -10,6 +10,48 @@ import (
 	"github.com/x-color/slice/strs"
 )
 
+func (s *Service) GetCalendars(ctx context.Context, userID string) ([]model.Calendar, error) {
+	reqID := ctx.Value(cctx.ReqIDKey).(string)
+	s.log = s.log.Uniq(reqID)
+
+	cals, err := s.getCalendars(ctx, userID)
+
+	if err != nil {
+		s.log.Error(err.Error())
+	} else {
+		s.log.Info(fmt.Sprintf("Get calendars for user(%v)", userID))
+	}
+
+	return cals, err
+}
+
+func (s *Service) getCalendars(ctx context.Context, userID string) ([]model.Calendar, error) {
+	cl, err := s.repo.Calendar().FindByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	cals := make([]model.Calendar, len(cl))
+	for i, cal := range cl {
+		cals[i] = cal.model()
+		pl, err := s.repo.Plan().FindByCalendarID(ctx, cal.ID)
+		if err != nil {
+			return nil, err
+		}
+		plans := make([]model.Plan, len(pl))
+		for j, p := range pl {
+			plan := p.model()
+			if plan.Private {
+				plan, _ = maskPlan(plan, cal.ID)
+			}
+			plans[j] = plan
+		}
+		cals[i].Plans = plans
+	}
+
+	return cals, nil
+}
+
 func (s *Service) MakeCalendar(ctx context.Context, userID, name, color string) (model.Calendar, error) {
 	reqID := ctx.Value(cctx.ReqIDKey).(string)
 	s.log = s.log.Uniq(reqID)
@@ -155,4 +197,17 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, calPram mod
 	}
 
 	return s.repo.Calendar().Update(ctx, newCalendarData(calPram))
+}
+
+func maskPlan(plan model.Plan, calID string) (model.Plan, error) {
+	if !strs.Contains(plan.Shares, calID) {
+		return model.Plan{}, cerror.NewInvalidContentError(
+			nil,
+			fmt.Sprintf("publishing destination calendar(%v) is not shared", calID),
+		)
+	}
+	plan.Name = ""
+	plan.Memo = ""
+	plan.Shares = []string{calID}
+	return plan, nil
 }

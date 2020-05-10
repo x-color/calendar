@@ -23,12 +23,60 @@ type CalendarContent struct {
 	Plans  []PlanContent `json:"plans"`
 }
 
+func calModelToContent(cal model.Calendar) CalendarContent {
+	plans := make([]PlanContent, len(cal.Plans))
+	for i, p := range cal.Plans {
+		plans[i] = planModelToContent(p)
+	}
+
+	c := CalendarContent{
+		ID:     cal.ID,
+		Name:   cal.Name,
+		Color:  string(cal.Color),
+		Shares: cal.Shares,
+		Plans:  plans,
+	}
+	return c
+}
+
+func planModelToContent(plan model.Plan) PlanContent {
+	p := PlanContent{
+		ID:         plan.ID,
+		CalendarID: plan.CalendarID,
+		Name:       plan.Name,
+		Memo:       plan.Memo,
+		Color:      string(plan.Color),
+		Private:    plan.Private,
+		Shares:     plan.Shares,
+		IsAllDay:   plan.Period.IsAllDay,
+		Begin:      plan.Period.Begin.Unix(),
+		End:        plan.Period.End.Unix(),
+	}
+	return p
+}
+
 type calEndpoint struct {
 	service service.Service
 }
 
 func (e *calEndpoint) GetCalendarsHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(cctx.UserIDKey).(string)
+	cl, err := e.service.GetCalendars(r.Context(), userID)
+	if errors.Is(err, cerror.ErrInvalidContent) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	cals := make([]CalendarContent, len(cl))
+	for i, c := range cl {
+		cals[i] = calModelToContent(c)
+	}
+
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(cals)
 }
 
 func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request) {
