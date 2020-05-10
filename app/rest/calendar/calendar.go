@@ -15,12 +15,12 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-type calendarContent struct {
+type CalendarContent struct {
 	ID     string        `json:"id"`
 	Name   string        `json:"name"`
 	Color  string        `json:"color"`
 	Shares []string      `json:"shares"`
-	Plans  []planContent `json:"plans"`
+	Plans  []PlanContent `json:"plans"`
 }
 
 type calEndpoint struct {
@@ -32,7 +32,7 @@ func (e *calEndpoint) GetCalendarsHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request) {
-	req := calendarContent{}
+	req := CalendarContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -48,7 +48,7 @@ func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	json.NewEncoder(w).Encode(calendarContent{
+	json.NewEncoder(w).Encode(CalendarContent{
 		ID:     cal.ID,
 		Name:   cal.Name,
 		Color:  string(cal.Color),
@@ -76,7 +76,7 @@ func (e *calEndpoint) RemoveCalendarHandler(w http.ResponseWriter, r *http.Reque
 
 func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	req := calendarContent{}
+	req := CalendarContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

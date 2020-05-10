@@ -87,7 +87,6 @@ func TestNewUserRouter_RegisterUser(t *testing.T) {
 		name   string
 		cookie *http.Cookie
 		code   int
-		res    map[string]interface{}
 	}{
 		{
 			name:   "register user",

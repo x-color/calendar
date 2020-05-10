@@ -16,7 +16,7 @@ import (
 	cerror "github.com/x-color/calendar/model/error"
 )
 
-type planContent struct {
+type PlanContent struct {
 	ID         string   `json:"id"`
 	CalendarID string   `json:"calendar_id"`
 	Name       string   `json:"name"`
@@ -34,7 +34,7 @@ type planEndpoint struct {
 }
 
 func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
-	req := planContent{}
+	req := PlanContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -70,7 +70,7 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(planContent{
+	json.NewEncoder(w).Encode(PlanContent{
 		ID:         plan.ID,
 		CalendarID: plan.CalendarID,
 		Name:       plan.Name,
@@ -85,7 +85,7 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *planEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) {
-	req := planContent{}
+	req := PlanContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -112,7 +112,7 @@ func (e *planEndpoint) UnsheduleHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (e *planEndpoint) ResheduleHandler(w http.ResponseWriter, r *http.Request) {
-	req := planContent{}
+	req := PlanContent{}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return

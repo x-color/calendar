@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/calendar"
@@ -39,7 +40,7 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 		cookie *http.Cookie
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
+		res    CalendarContent
 	}{
 		{
 			name:   "no cookie",
@@ -58,7 +59,13 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "shares": []interface{}{userID}, "plans": nil},
+			res: CalendarContent{
+				ID:     "",
+				Name:   "My plans",
+				Color:  "red",
+				Shares: []string{userID},
+				Plans:  nil,
+			},
 		},
 	}
 
@@ -76,17 +83,15 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
+			var actual CalendarContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -121,7 +126,7 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 		cookie *http.Cookie
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
+		res    CalendarContent
 	}{
 		{
 			name:   "no registered user",
@@ -134,7 +139,13 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "test", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "", "name": "test", "color": "red", "shares": []interface{}{userID}, "plans": nil},
+			res: CalendarContent{
+				ID:     "",
+				Name:   "test",
+				Color:  "red",
+				Shares: []string{userID},
+				Plans:  nil,
+			},
 		},
 	}
 
@@ -152,17 +163,15 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
+			var actual CalendarContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -191,7 +200,7 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 		cookie *http.Cookie
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
+		res    CalendarContent
 	}{
 		{
 			name:   "invalid contents",
@@ -204,7 +213,13 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 			cookie: &cookie,
 			body:   map[string]interface{}{"name": "My plans", "color": "red"},
 			code:   http.StatusOK,
-			res:    map[string]interface{}{"id": "", "name": "My plans", "color": "red", "shares": []interface{}{userID}, "plans": nil},
+			res: CalendarContent{
+				ID:     "",
+				Name:   "My plans",
+				Color:  "red",
+				Shares: []string{userID},
+				Plans:  nil,
+			},
 		},
 	}
 
@@ -222,17 +237,15 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
+			var actual CalendarContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -278,7 +291,6 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 		cookie *http.Cookie
 		calID  string
 		code   int
-		res    map[string]interface{}
 	}{
 		{
 			name:   "invalid calendar id",
@@ -324,20 +336,6 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
-
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
-			}
 		})
 	}
 }
@@ -370,7 +368,6 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 		calID  string
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
 	}{
 		{
 			name:   "invalid calendar id",
@@ -421,20 +418,6 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 
 			if rec.Code != tc.code {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
-			}
-
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
-			}
-			expected := tc.res
-
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
-				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/calendar"
@@ -85,7 +86,7 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 		cookie *http.Cookie
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
+		res    PlanContent
 	}{
 		{
 			name:   "no cookie",
@@ -128,17 +129,17 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusOK,
-			res: map[string]interface{}{
-				"id":          "",
-				"calendar_id": cal.ID,
-				"name":        "all day plan",
-				"memo":        "sample text",
-				"color":       "red",
-				"private":     true,
-				"shares":      []interface{}{cal.ID},
-				"is_all_day":  true,
-				"begin":       float64(0),
-				"end":         float64(0),
+			res: PlanContent{
+				ID:         "",
+				CalendarID: cal.ID,
+				Name:       "all day plan",
+				Memo:       "sample text",
+				Color:      "red",
+				Private:    true,
+				Shares:     []string{cal.ID},
+				IsAllDay:   true,
+				Begin:      0,
+				End:        0,
 			},
 		},
 	}
@@ -157,17 +158,15 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
+			var actual PlanContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -203,7 +202,7 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 		cookie *http.Cookie
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
+		res    PlanContent
 	}{
 		{
 			name:   "no registered user",
@@ -225,17 +224,17 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 				"end":         time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix(),
 			},
 			code: http.StatusOK,
-			res: map[string]interface{}{
-				"id":          "",
-				"calendar_id": cal.ID,
-				"name":        "plan",
-				"memo":        "sample text",
-				"color":       "red",
-				"private":     true,
-				"shares":      []interface{}{cal.ID},
-				"is_all_day":  false,
-				"begin":       float64(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
-				"end":         float64(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
+			res: PlanContent{
+				ID:         "",
+				CalendarID: cal.ID,
+				Name:       "plan",
+				Memo:       "sample text",
+				Color:      "red",
+				Private:    true,
+				Shares:     []string{cal.ID},
+				IsAllDay:   false,
+				Begin:      int(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
+				End:        int(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
 			},
 		},
 	}
@@ -254,17 +253,15 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
+			var actual PlanContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
@@ -296,7 +293,7 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 		cookie *http.Cookie
 		body   map[string]interface{}
 		code   int
-		res    map[string]interface{}
+		res    PlanContent
 	}{
 		{
 			name:   "invalid calendar",
@@ -375,17 +372,17 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"end":         time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix(),
 			},
 			code: http.StatusOK,
-			res: map[string]interface{}{
-				"id":          "",
-				"calendar_id": cal.ID,
-				"name":        "plan",
-				"memo":        "sample text",
-				"color":       "red",
-				"private":     true,
-				"shares":      []interface{}{cal.ID, sharedCal.ID},
-				"is_all_day":  false,
-				"begin":       float64(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
-				"end":         float64(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
+			res: PlanContent{
+				ID:         "",
+				CalendarID: cal.ID,
+				Name:       "plan",
+				Memo:       "sample text",
+				Color:      "red",
+				Private:    true,
+				Shares:     []string{cal.ID, sharedCal.ID},
+				IsAllDay:   false,
+				Begin:      int(time.Date(2020, 4, 1, 9, 0, 0, 0, time.Local).Unix()),
+				End:        int(time.Date(2020, 4, 1, 18, 0, 0, 0, time.Local).Unix()),
 			},
 		},
 		{
@@ -401,17 +398,17 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusOK,
-			res: map[string]interface{}{
-				"id":          "",
-				"calendar_id": cal.ID,
-				"name":        "all day plan",
-				"memo":        "sample text",
-				"color":       "red",
-				"private":     true,
-				"shares":      []interface{}{cal.ID},
-				"is_all_day":  true,
-				"begin":       float64(0),
-				"end":         float64(0),
+			res: PlanContent{
+				ID:         "",
+				CalendarID: cal.ID,
+				Name:       "all day plan",
+				Memo:       "sample text",
+				Color:      "red",
+				Private:    true,
+				Shares:     []string{cal.ID},
+				IsAllDay:   true,
+				Begin:      0,
+				End:        0,
 			},
 		},
 		{
@@ -427,17 +424,17 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				"is_all_day":  true,
 			},
 			code: http.StatusOK,
-			res: map[string]interface{}{
-				"id":          "",
-				"calendar_id": sharedCal.ID,
-				"name":        "plan",
-				"memo":        "sample text",
-				"color":       "red",
-				"private":     false,
-				"shares":      []interface{}{sharedCal.ID},
-				"is_all_day":  true,
-				"begin":       float64(0),
-				"end":         float64(0),
+			res: PlanContent{
+				ID:         "",
+				CalendarID: sharedCal.ID,
+				Name:       "plan",
+				Memo:       "sample text",
+				Color:      "red",
+				Private:    false,
+				Shares:     []string{sharedCal.ID},
+				IsAllDay:   true,
+				Begin:      0,
+				End:        0,
 			},
 		},
 	}
@@ -456,17 +453,15 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
-			var actual map[string]interface{}
-			if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
-				t.Errorf("invalid response body: %v", rec.Body.String())
+			var actual PlanContent
+			if len(rec.Body.Bytes()) > 0 {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(expected, actual, testutils.IgnoreKey("id")); d != "" {
+			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(PlanContent{}, "ID")); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
