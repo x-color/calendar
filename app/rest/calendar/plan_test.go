@@ -58,6 +58,8 @@ func makePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares ...strin
 		Color:      "red",
 		Shares:     append(shares, calendarID),
 		IsAllDay:   true,
+		Begin:      plan.Period.Begin.Unix(),
+		End:        plan.Period.End.Unix(),
 	}
 	calRepo.Plan().Create(context.Background(), planData)
 	return plan
@@ -83,6 +85,8 @@ func makePrivatePlan(calRepo cs.Repogitory, ownerID, calendarID string, shares .
 		Private:    true,
 		Shares:     append(shares, calendarID),
 		IsAllDay:   true,
+		Begin:      plan.Period.Begin.Unix(),
+		End:        plan.Period.End.Unix(),
 	}
 	calRepo.Plan().Create(context.Background(), planData)
 	return plan

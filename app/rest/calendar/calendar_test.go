@@ -280,10 +280,6 @@ func TestNewCalendarRouter_GetCalendars(t *testing.T) {
 				t.Errorf("status code: want %v but %v", tc.code, rec.Code)
 			}
 
-			if tc.res == nil {
-				return
-			}
-
 			var actual []CalendarContent
 			if len(rec.Body.Bytes()) > 0 {
 				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
@@ -292,7 +288,7 @@ func TestNewCalendarRouter_GetCalendars(t *testing.T) {
 			}
 			expected := tc.res
 
-			if d := cmp.Diff(actual, expected, cmpopts.IgnoreFields(CalendarContent{}, "ID")); d != "" {
+			if d := cmp.Diff(expected, actual); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
 		})
