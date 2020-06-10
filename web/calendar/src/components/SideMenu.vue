@@ -177,6 +177,7 @@ export default {
         plans: [],
       };
       this.addCalendar(newCal);
+      this.newCalName = '';
       this.isOpenedNewCal = false;
     },
   },
