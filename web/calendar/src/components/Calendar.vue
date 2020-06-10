@@ -5,11 +5,13 @@
         <v-sheet height="64">
           <v-toolbar flat color="white">
             <v-btn
-              outlined
-              class="mr-4"
-              color="grey darken-2"
+              fab
+              text
+              small
               @click="setToday"
-            >Today</v-btn>
+            >
+              <v-icon medium>mdi-calendar</v-icon>
+            </v-btn>
             <v-btn fab text small color="grey darken-2" @click="prev">
               <v-icon small>mdi-chevron-left</v-icon>
             </v-btn>
@@ -20,7 +22,7 @@
             <v-spacer></v-spacer>
             <v-menu bottom right>
               <template v-slot:activator="{ on }">
-                <v-btn outlined color="grey darken-2" v-on="on">
+                <v-btn outlined color="grey darken-2" v-on="on" small>
                   <span>{{ typeToLabel[type] }}</span>
                   <v-icon right>mdi-menu-down</v-icon>
                 </v-btn>
@@ -54,14 +56,17 @@
             @click:event="showPlan"
             @click:more="viewDay"
             @click:date="viewDay"
+            @click:day="openEditor"
+            @click:time="openEditor"
             @change="updateRange"
-            @mousedown:day="tmpFunc"
+            :class="{'small-cal': $vuetify.breakpoint.xs}"
           ></v-calendar>
           <Plan
             v-model="selectedOpen"
             :id="selectedPlan.id"
             :element="selectedElement"
           />
+          <PlanEditor v-model="open" :plan="plan" @save="save" />
         </v-sheet>
       </v-col>
     </v-row>
@@ -71,11 +76,13 @@
 <script>
 import moment from 'moment';
 import Plan from '@/components/Plan.vue';
-import { mapGetters, mapMutations } from 'vuex';
+import PlanEditor from '@/components/PlanEditor.vue';
+import { mapGetters, mapActions, mapMutations } from 'vuex';
 
 export default {
   components: {
     Plan,
+    PlanEditor,
   },
   data: () => ({
     today: moment().format('YYYY-MM-DD'),
@@ -91,10 +98,25 @@ export default {
     selectedPlan: {},
     selectedElement: null,
     selectedOpen: false,
+    open: false,
+    plan: {
+      id: '',
+      calendar_id: '',
+      owner_id: '',
+      name: '',
+      memo: '',
+      color: 'red',
+      private: false,
+      shares: [],
+      start: null,
+      end: null,
+      allday: false,
+    },
   }),
   computed: {
     ...mapGetters({
       getActivePlans: 'calendars/getActivePlans',
+      getMyCalendars: 'calendars/getMyCalendars',
     }),
     focus: {
       get() {
@@ -111,27 +133,8 @@ export default {
       }
 
       const startMonth = this.monthFormatter(start);
-      const endMonth = this.monthFormatter(end);
-      const suffixMonth = startMonth === endMonth ? '' : endMonth;
-
       const startYear = start.year;
-      const endYear = end.year;
-      const suffixYear = startYear === endYear ? '' : endYear;
-
-      const startDay = start.day + this.nth(start.day);
-      const endDay = end.day + this.nth(end.day);
-
-      switch (this.type) {
-        case 'month':
-          return `${startMonth} ${startYear}`;
-        case 'week':
-        case '4day':
-          return `${startMonth} ${startDay} ${startYear} - ${suffixMonth} ${endDay} ${suffixYear}`;
-        case 'day':
-          return `${startMonth} ${startDay} ${startYear}`;
-        default:
-          return '';
-      }
+      return `${startMonth} ${startYear}`;
     },
     monthFormatter() {
       return this.$refs.calendar.getFormatter({
@@ -139,7 +142,7 @@ export default {
       });
     },
     plans() {
-      return this.getActivePlans.map((p) => {
+      return this.getActivePlans().map((p) => {
         const plan = { ...p };
         plan.start = this.formatDate(plan.start, !p.allday);
         plan.end = this.formatDate(plan.end, !p.allday);
@@ -154,8 +157,27 @@ export default {
     ...mapMutations({
       setFocusDate: 'calendars/setFocusDate',
     }),
-    tmpFunc(v) {
-      console.log(v);
+    ...mapActions({
+      addPlan: 'calendars/addPlan',
+    }),
+    openEditor(date) {
+      this.plan = {
+        id: '',
+        calendar_id: '',
+        owner_id: this.$store.state.user.user.id,
+        name: '',
+        memo: '',
+        color: 'red',
+        private: false,
+        shares: [],
+        start: moment([date.year, date.month - 1, date.day, date.hour, 0]),
+        end: moment([date.year, date.month - 1, date.day, date.hour + 1, 0]),
+        allday: date.time === '',
+      };
+      this.open = true;
+    },
+    save(newPlan) {
+      this.addPlan(newPlan);
     },
     viewDay({ date }) {
       this.focus = date;
@@ -209,3 +231,10 @@ export default {
   },
 };
 </script>
+
+<style>
+.small-cal .v-btn {
+  height: 40px;
+  width: 40px;
+}
+</style>

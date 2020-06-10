@@ -19,9 +19,7 @@
               hide-details
               required
               :class="{ 'sm-text': $vuetify.breakpoint.xs }"
-              :disabled="disabled"
             ></v-text-field>
-            <!-- prepend-icon="mdi-calendar-month" -->
           </template>
           <v-date-picker
             :value="date"

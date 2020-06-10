@@ -13,13 +13,16 @@
 
 <script>
 import moment from 'moment';
-import { mapMutations } from 'vuex';
+import { mapGetters, mapMutations } from 'vuex';
 
 export default {
   data: () => ({
     today: moment().format('YYYY-MM-DD'),
   }),
   computed: {
+    ...mapGetters({
+      getActivePlans: 'calendars/getActivePlans',
+    }),
     focus: {
       get() {
         return this.$store.state.calendars.focusDate;
@@ -29,8 +32,7 @@ export default {
       },
     },
     plans() {
-      // eslint-disable-next-line max-len
-      const plans = this.$store.state.calendars.calendars.map((calendar) => calendar.plans.map((plan) => {
+      const plans = this.getActivePlans().map((plan) => {
         const start = plan.start.hour(0).minute(0).second(0).millisecond(0);
         const end = plan.end.hour(23).minute(0).second(0).millisecond(0);
 
@@ -42,7 +44,7 @@ export default {
         }
 
         return list;
-      }).flat()).flat();
+      }).flat();
 
       return plans.map((e) => e.format('YYYY-MM-DD'));
     },

@@ -1,18 +1,24 @@
 <template>
-  <v-app>
-    <Header v-model="open" :appMode="$route.name === 'CalendarPage'" />
-    <router-view />
-  </v-app>
+  <v-content>
+    <SideMenu v-model="open" />
+    <v-container>
+      <v-row>
+        <Calendar />
+      </v-row>
+    </v-container>
+  </v-content>
 </template>
 
 <script>
-import Header from '@/components/Header.vue';
 import { mapMutations } from 'vuex';
+import Calendar from '@/components/Calendar.vue';
+import SideMenu from '@/components/SideMenu.vue';
 
 export default {
-  name: 'App',
+  name: 'CalendarPage',
   components: {
-    Header,
+    Calendar,
+    SideMenu,
   },
   computed: {
     open: {
