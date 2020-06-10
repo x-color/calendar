@@ -1,8 +1,8 @@
 <template>
   <v-content>
     <SideMenu v-model="open" />
-    <v-container>
-      <v-row>
+    <v-container class="py-0">
+      <v-row class="py-0">
         <Calendar />
       </v-row>
     </v-container>

@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row class="fill-height">
-      <v-col>
+      <v-col class="py-0">
         <v-sheet height="64">
           <v-toolbar flat color="white">
             <v-btn
