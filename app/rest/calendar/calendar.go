@@ -17,6 +17,7 @@ import (
 
 type CalendarContent struct {
 	ID     string        `json:"id"`
+	UserID string        `json:"user_id"`
 	Name   string        `json:"name"`
 	Color  string        `json:"color"`
 	Shares []string      `json:"shares"`
@@ -31,6 +32,7 @@ func calModelToContent(cal model.Calendar) CalendarContent {
 
 	c := CalendarContent{
 		ID:     cal.ID,
+		UserID: cal.UserID,
 		Name:   cal.Name,
 		Color:  string(cal.Color),
 		Shares: cal.Shares,

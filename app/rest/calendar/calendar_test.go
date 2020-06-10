@@ -27,6 +27,7 @@ func calModelToContent(cal model.Calendar) CalendarContent {
 
 	c := CalendarContent{
 		ID:     cal.ID,
+		UserID: cal.UserID,
 		Name:   cal.Name,
 		Color:  string(cal.Color),
 		Shares: cal.Shares,
