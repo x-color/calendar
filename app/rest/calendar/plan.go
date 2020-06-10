@@ -19,6 +19,7 @@ import (
 type PlanContent struct {
 	ID         string   `json:"id"`
 	CalendarID string   `json:"calendar_id"`
+	UserID     string   `json:"user_id"`
 	Name       string   `json:"name"`
 	Memo       string   `json:"memo"`
 	Color      string   `json:"color"`
@@ -72,6 +73,7 @@ func (e *planEndpoint) ScheduleHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(PlanContent{
 		ID:         plan.ID,
+		UserID:     plan.UserID,
 		CalendarID: plan.CalendarID,
 		Name:       plan.Name,
 		Memo:       plan.Memo,

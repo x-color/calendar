@@ -160,6 +160,7 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 			code: http.StatusOK,
 			res: PlanContent{
 				ID:         "",
+				UserID:     userID,
 				CalendarID: cal.ID,
 				Name:       "all day plan",
 				Memo:       "sample text",
@@ -255,6 +256,7 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 			code: http.StatusOK,
 			res: PlanContent{
 				ID:         "",
+				UserID:     userID,
 				CalendarID: cal.ID,
 				Name:       "plan",
 				Memo:       "sample text",
@@ -403,6 +405,7 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 			code: http.StatusOK,
 			res: PlanContent{
 				ID:         "",
+				UserID:     userID,
 				CalendarID: cal.ID,
 				Name:       "plan",
 				Memo:       "sample text",
@@ -429,6 +432,7 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 			code: http.StatusOK,
 			res: PlanContent{
 				ID:         "",
+				UserID:     userID,
 				CalendarID: cal.ID,
 				Name:       "all day plan",
 				Memo:       "sample text",
@@ -455,6 +459,7 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 			code: http.StatusOK,
 			res: PlanContent{
 				ID:         "",
+				UserID:     userID,
 				CalendarID: sharedCal.ID,
 				Name:       "plan",
 				Memo:       "sample text",
