@@ -12,6 +12,7 @@ import (
 )
 
 type userContent struct {
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
 }
@@ -72,7 +73,9 @@ func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 
-	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(userContent{
+		ID: session.UserID,
+	})
 }
 
 func (e *authEndpoint) SignoutHandler(w http.ResponseWriter, r *http.Request) {

@@ -67,9 +67,10 @@ func TestNewRouter_Signup(t *testing.T) {
 
 func TestNewRouter_Signin(t *testing.T) {
 	repo := testutils.NewAuthRepo()
+	userID := uuid.New().String()
 	pwd, _ := bcrypt.GenerateFromPassword([]byte("P@ssw0rd"), bcrypt.DefaultCost)
 	repo.User().Create(context.Background(), as.UserData{
-		ID:       uuid.New().String(),
+		ID:       userID,
 		Name:     "Alice",
 		Password: string(pwd),
 	})
@@ -98,7 +99,7 @@ func TestNewRouter_Signin(t *testing.T) {
 		{
 			name:    "signin",
 			body:    map[string]string{"name": "Alice", "password": "P@ssw0rd"},
-			code:    http.StatusNoContent,
+			code:    http.StatusOK,
 			cookies: 1,
 		},
 	}
@@ -117,6 +118,16 @@ func TestNewRouter_Signin(t *testing.T) {
 
 			if len(rec.Result().Cookies()) != tc.cookies {
 				t.Errorf("cookies: want %v but %v", tc.cookies, rec.Result().Cookies())
+			}
+
+			var actual map[string]string
+			if tc.code == http.StatusOK {
+				if err := json.Unmarshal(rec.Body.Bytes(), &actual); err != nil {
+					t.Errorf("invalid response body: %v", rec.Body.String())
+				}
+				if i, ok := actual["id"]; !ok || i != userID {
+					t.Errorf("id is not response: %v", rec.Body.String())
+				}
 			}
 		})
 	}
