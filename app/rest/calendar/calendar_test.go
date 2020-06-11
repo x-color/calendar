@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/calendar"
+	"github.com/x-color/calendar/app/rest/middlewares"
 	"github.com/x-color/calendar/app/rest/testutils"
 	as "github.com/x-color/calendar/auth/service"
 	"github.com/x-color/calendar/calendar/model"
@@ -62,6 +63,7 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -143,6 +145,7 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -234,6 +237,7 @@ func TestNewCalendarRouter_GetCalendars(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -306,6 +310,7 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -397,6 +402,7 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -473,6 +479,7 @@ func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewCalendarRouter(r.PathPrefix("/calendars").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{

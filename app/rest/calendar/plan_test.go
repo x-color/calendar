@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/calendar"
+	"github.com/x-color/calendar/app/rest/middlewares"
 	"github.com/x-color/calendar/app/rest/testutils"
 	as "github.com/x-color/calendar/auth/service"
 	mcal "github.com/x-color/calendar/calendar/model"
@@ -111,6 +112,7 @@ func TestNewPlanRouter_Authoraization(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -229,6 +231,7 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -326,6 +329,7 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -564,6 +568,7 @@ func TestNewPlanRouter_Unshedule(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -664,6 +669,7 @@ func TestNewPlanRouter_Reschedule(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewPlanRouter(r.PathPrefix("/plans").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{

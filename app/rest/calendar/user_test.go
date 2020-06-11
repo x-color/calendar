@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	. "github.com/x-color/calendar/app/rest/calendar"
+	"github.com/x-color/calendar/app/rest/middlewares"
 	"github.com/x-color/calendar/app/rest/testutils"
 	as "github.com/x-color/calendar/auth/service"
 	cs "github.com/x-color/calendar/calendar/service"
@@ -22,6 +23,7 @@ func TestNewUserRouter_Authoraization(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewUserRouter(r.PathPrefix("/register").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{
@@ -76,6 +78,7 @@ func TestNewUserRouter_RegisterUser(t *testing.T) {
 	authService := as.NewService(authRepo, l)
 	calendarService := cs.NewService(calRepo, l)
 	r := mux.NewRouter()
+	r.Use(middlewares.ReqIDMiddleware)
 	NewUserRouter(r.PathPrefix("/register").Subrouter(), calendarService, authService)
 
 	cookie := http.Cookie{

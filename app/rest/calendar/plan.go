@@ -164,7 +164,6 @@ func (e *planEndpoint) ResheduleHandler(w http.ResponseWriter, r *http.Request) 
 
 func NewPlanRouter(r *mux.Router, calService cs.Service, authService as.Service) {
 	e := planEndpoint{calService}
-	r.Use(middlewares.ReqIDMiddleware)
 	r.Use(middlewares.ResponseHeaderMiddleware)
 	r.Use(middlewares.AuthorizationMiddleware(authService))
 	r.Use(userCheckerMiddleware(calService))

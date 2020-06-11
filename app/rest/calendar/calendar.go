@@ -166,7 +166,6 @@ func (e *calEndpoint) ChangeCalendarHandler(w http.ResponseWriter, r *http.Reque
 
 func NewCalendarRouter(r *mux.Router, calService cs.Service, authService as.Service) {
 	e := calEndpoint{calService}
-	r.Use(middlewares.ReqIDMiddleware)
 	r.Use(middlewares.ResponseHeaderMiddleware)
 	r.Use(middlewares.AuthorizationMiddleware(authService))
 	r.Use(userCheckerMiddleware(calService))

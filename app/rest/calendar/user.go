@@ -28,7 +28,6 @@ func (e *userEndpoint) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 func NewUserRouter(r *mux.Router, calService cs.Service, authService as.Service) {
 	e := userEndpoint{calService}
-	r.Use(middlewares.ReqIDMiddleware)
 	r.Use(middlewares.ResponseHeaderMiddleware)
 	r.Use(middlewares.AuthorizationMiddleware(authService))
 	r.HandleFunc("", e.RegisterHandler).Methods(http.MethodPost)

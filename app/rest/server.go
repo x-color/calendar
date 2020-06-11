@@ -20,18 +20,21 @@ func StartServer(authService as.Service, calService cs.Service, l logging.Logger
 func newRouter(authService as.Service, calService cs.Service, l logging.Logger) *mux.Router {
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.NotFoundHandler()
+	r.Use(middlewares.ReqIDMiddleware)
 	r.Use(middlewares.LoggingMiddleware(l))
 
-	ar := r.PathPrefix("/auth").Subrouter()
+	apiRouter := r.PathPrefix("/api").Subrouter()
+
+	ar := apiRouter.PathPrefix("/auth").Subrouter()
 	ase.NewRouter(ar, authService)
 
-	ur := r.PathPrefix("/register").Subrouter()
+	ur := apiRouter.PathPrefix("/register").Subrouter()
 	cse.NewUserRouter(ur, calService, authService)
 
-	cr := r.PathPrefix("/calendars").Subrouter()
+	cr := apiRouter.PathPrefix("/calendars").Subrouter()
 	cse.NewCalendarRouter(cr, calService, authService)
 
-	pr := r.PathPrefix("/plans").Subrouter()
+	pr := apiRouter.PathPrefix("/plans").Subrouter()
 	cse.NewPlanRouter(pr, calService, authService)
 
 	return r
