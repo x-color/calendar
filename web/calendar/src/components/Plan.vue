@@ -7,7 +7,7 @@
         <v-btn
           icon
           @click.stop="openEditor = true"
-          :disabled="plan.owner_id !== $store.state.user.user.id"
+          :disabled="plan.user_id !== $store.state.user.user.id"
         >
           <v-icon>mdi-pencil</v-icon>
         </v-btn>

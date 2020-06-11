@@ -254,8 +254,8 @@ export default {
       if (this.newPlan.id === '') {
         this.newPlan.id = generateUuid();
       }
-      if (this.newPlan.owner_id === '') {
-        this.newPlan.owner_id = this.$store.state.user.user.id;
+      if (this.newPlan.user_id === '') {
+        this.newPlan.user_id = this.$store.state.user.user.id;
       }
       this.$emit('save', this.newPlan);
       this.$emit('input', false);
@@ -275,7 +275,7 @@ export default {
           this.newPlan = {
             id: '',
             calendar_id: '',
-            owner_id: '',
+            user_id: '',
             name: '',
             memo: '',
             color: 'red',

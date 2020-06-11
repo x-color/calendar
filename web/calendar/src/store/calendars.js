@@ -1,4 +1,59 @@
 import moment from 'moment';
+import fetchAPI from '@/utils/fetch';
+
+const converter = {
+  calAPIModelToModel(calendar) {
+    return {
+      id: calendar.id,
+      user_id: calendar.user_id,
+      active: true,
+      name: calendar.name,
+      color: calendar.color,
+      shares: calendar.shares.filter((id) => id !== calendar.user_id),
+      plans: calendar.plans.map((p) => this.planAPIModelToModel(p)),
+    };
+  },
+  calModelToAPIModel(calendar) {
+    return {
+      id: calendar.id,
+      user_id: calendar.user_id,
+      name: calendar.name,
+      color: calendar.color,
+      shares: calendar.shares,
+      plans: calendar.plans.map((p) => this.planModelToAPIModel(p)),
+    };
+  },
+  planAPIModelToModel(plan) {
+    return {
+      id: plan.id,
+      calendar_id: plan.calendar_id,
+      user_id: plan.user_id,
+      name: plan.name,
+      memo: plan.memo,
+      color: plan.color,
+      private: plan.private,
+      shares: plan.shares,
+      start: moment().unix(plan.begin).toISOString(),
+      end: moment().unix(plan.end).toISOString(),
+      allday: plan.is_all_day,
+    };
+  },
+  planModelToAPIModel(plan) {
+    return {
+      id: plan.id,
+      calendar_id: plan.calendar_id,
+      user_id: plan.user_id,
+      name: plan.name,
+      memo: plan.memo,
+      color: plan.color,
+      private: plan.private,
+      shares: plan.shares,
+      begin: moment(plan.start).unix(),
+      end: moment(plan.end).unix(),
+      is_all_day: plan.allday,
+    };
+  },
+};
 
 // calendars: []calendar
 // calendar: { id, user_id, name, color, []plan }
@@ -17,7 +72,7 @@ const state = () => ({
         {
           id: 'plan01',
           calendar_id: 'calendar01',
-          owner_id: 'user01',
+          user_id: 'user01',
           name: 'my plan',
           memo: 'sample text',
           color: 'blue',
@@ -40,7 +95,7 @@ const state = () => ({
         {
           id: 'plan02',
           calendar_id: 'calendar02',
-          owner_id: 'user02',
+          user_id: 'user02',
           name: 'other\'s plan',
           memo: 'sample text',
           color: 'purple',
@@ -87,32 +142,47 @@ const getters = {
 };
 
 const actions = {
-  // getCalendars({ commit }) {
-  //   Call API
-  //   commit('setCalendars', calendars)
-  // },
-  addCalendar({ commit }, calendar) {
-    commit('addCalendar', calendar);
+  getCalendars({ commit }) {
+    const obj = fetchAPI('/calendars');
+    const calendars = obj.map((cal) => converter.calAPIModelToModel(cal));
+    commit('setCalendars', calendars);
+  },
+  addCalendar({ commit }, cal) {
+    const body = {
+      name: cal.name,
+      color: cal.color,
+    };
+    fetchAPI('/calendars', 'POST', JSON.stringify(body))
+      .then((calendar) => commit('addCalendar', calendar));
   },
   removeCalendar({ commit }, { id }) {
+    fetchAPI(`/calendars/${id}`, 'DELETE');
     commit('removeCalendar', id);
   },
-  editCalendar({ commit }, calendar) {
+  editCalendar({ commit }, cal) {
+    const calendar = { ...cal };
+    const body = converter.calModelToAPIModel(cal);
+    fetchAPI(`/calendars/${cal.id}`, 'PATCH', JSON.stringify(body));
     commit('setCalendar', calendar);
   },
   addPlan({ commit }, p) {
     const plan = { ...p };
     plan.start = p.start.toISOString();
     plan.end = p.end.toISOString();
-    commit('addPlan', plan);
+    const body = converter.planModelToAPIModel(plan);
+    fetchAPI('/plans', 'POST', JSON.stringify(body))
+      .then((resPlan) => commit('addPlan', converter.planAPIModelToModel(resPlan)));
   },
   removePlan({ commit }, { id }) {
+    fetchAPI(`/plans/${id}`, 'DELETE');
     commit('removePlan', id);
   },
   editPlan({ commit }, p) {
     const plan = { ...p };
     plan.start = p.start.toISOString();
     plan.end = p.end.toISOString();
+    const body = converter.planModelToAPIModel(plan);
+    fetchAPI(`/plans/${p.id}`, 'PATCH', JSON.stringify(body));
     commit('setPlan', plan);
   },
 };

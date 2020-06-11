@@ -102,7 +102,7 @@ export default {
     plan: {
       id: '',
       calendar_id: '',
-      owner_id: '',
+      user_id: '',
       name: '',
       memo: '',
       color: 'red',
@@ -152,19 +152,21 @@ export default {
   },
   mounted() {
     this.$refs.calendar.checkChange();
+    this.getCalendars();
   },
   methods: {
     ...mapMutations({
       setFocusDate: 'calendars/setFocusDate',
     }),
     ...mapActions({
+      getCalendars: 'calendars/getCalendars',
       addPlan: 'calendars/addPlan',
     }),
     openEditor(date) {
       this.plan = {
         id: '',
         calendar_id: '',
-        owner_id: this.$store.state.user.user.id,
+        user_id: this.$store.state.user.user.id,
         name: '',
         memo: '',
         color: 'red',
