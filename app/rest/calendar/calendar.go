@@ -45,6 +45,7 @@ func planModelToContent(plan model.Plan) PlanContent {
 	p := PlanContent{
 		ID:         plan.ID,
 		CalendarID: plan.CalendarID,
+		UserID:     plan.UserID,
 		Name:       plan.Name,
 		Memo:       plan.Memo,
 		Color:      string(plan.Color),
@@ -100,6 +101,7 @@ func (e *calEndpoint) MakeCalendarHandler(w http.ResponseWriter, r *http.Request
 
 	json.NewEncoder(w).Encode(CalendarContent{
 		ID:     cal.ID,
+		UserID: cal.UserID,
 		Name:   cal.Name,
 		Color:  string(cal.Color),
 		Shares: cal.Shares,

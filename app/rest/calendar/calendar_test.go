@@ -41,6 +41,7 @@ func planModelToContent(plan model.Plan) PlanContent {
 	p := PlanContent{
 		ID:         plan.ID,
 		CalendarID: plan.CalendarID,
+		UserID:     plan.UserID,
 		Name:       plan.Name,
 		Memo:       plan.Memo,
 		Color:      string(plan.Color),
@@ -97,6 +98,7 @@ func TestNewCalendarRouter_Authoraization(t *testing.T) {
 			code:   http.StatusOK,
 			res: CalendarContent{
 				ID:     "",
+				UserID: userID,
 				Name:   "My plans",
 				Color:  "red",
 				Shares: []string{userID},
@@ -178,6 +180,7 @@ func TestNewCalendarRouter_UserRegistrationChecker(t *testing.T) {
 			code:   http.StatusOK,
 			res: CalendarContent{
 				ID:     "",
+				UserID: userID,
 				Name:   "test",
 				Color:  "red",
 				Shares: []string{userID},
@@ -338,6 +341,7 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 			code:   http.StatusOK,
 			res: CalendarContent{
 				ID:     "",
+				UserID: userID,
 				Name:   "My plans",
 				Color:  "red",
 				Shares: []string{userID},
