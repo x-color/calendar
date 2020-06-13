@@ -196,6 +196,8 @@ func (s *Service) changeCalendar(ctx context.Context, userID string, calPram mod
 		)
 	}
 
+	calPram.UserID = c.UserID
+
 	return s.repo.Calendar().Update(ctx, newCalendarData(calPram))
 }
 
