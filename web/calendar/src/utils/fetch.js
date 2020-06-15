@@ -1,17 +1,21 @@
-export default function fetchAPI(url, method = 'GET', body = '') {
+export default function fetchAPI(url, method = 'GET', body = '', signin = true) {
   const options = {
     method,
     headers: {
       'X-XSRF-TOKEN': 'csrf',
       'Content-Type': 'application/json; charset=UTF-8',
     },
-    credentials: 'same-origin',
   };
+
+  if (signin) {
+    options.credentials = 'same-origin';
+  }
+
   if (body !== '') {
     options.body = body;
   }
 
-  const prefix = '/';
+  const prefix = '/api';
 
   return fetch(`${prefix}${url}`, options).catch((err) => {
     console.error(`Request failed: ${err}`);

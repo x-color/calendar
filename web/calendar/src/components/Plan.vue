@@ -1,6 +1,6 @@
 <template>
   <v-menu v-model="open" :close-on-content-click="false" :activator="element" offset-x>
-    <v-card color="grey lighten-4" min-width="350px" flat>
+    <v-card color="grey lighten-4" min-width="200px" flat>
       <v-toolbar :color="plan.color" dark>
         <v-toolbar-title v-html="plan.name"></v-toolbar-title>
         <v-spacer></v-spacer>
@@ -16,9 +16,7 @@
         </v-btn>
       </v-toolbar>
       <v-card-text>
-        <span v-html="plan.memo"></span>
-        <span v-html="plan.start"></span>
-        <span v-html="plan.end"></span>
+        {{ plan.memo }}
       </v-card-text>
       <v-card-actions>
         <v-btn text color="secondary" @click="open = false">Cancel</v-btn>

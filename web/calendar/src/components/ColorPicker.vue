@@ -44,7 +44,7 @@ export default {
   },
   data() {
     return {
-      colors: ['red', 'green', 'blue', 'purple'],
+      colors: ['red', 'green', 'blue', 'yellow'],
     };
   },
   methods: {

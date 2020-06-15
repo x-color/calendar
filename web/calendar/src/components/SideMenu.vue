@@ -146,7 +146,7 @@ export default {
     activeCal(cal) {
       // eslint-disable-next-line no-param-reassign
       cal.active = !cal.active;
-      this.editCalendar(cal);
+      this.editCalendar({ cal, noapi: true });
     },
     removeCal(cal) {
       this.removeCalendar(cal);
@@ -161,7 +161,7 @@ export default {
     },
     save(newCal) {
       // Todo: Cancel to change calendar and set old calendar if calling API is failed.
-      this.editCalendar(newCal);
+      this.editCalendar({ cal: newCal });
     },
     addNewCalendar() {
       if (!this.newCalName) {

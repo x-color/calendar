@@ -91,6 +91,9 @@ export default {
     },
     save() {
       this.picking = false;
+      this.newCalendar.shares.unshift(this.$store.state.user.user.id);
+      this.newCalendar.shares = this.newCalendar.shares
+        .filter((elm, i, self) => self.indexOf(elm) === i);
       this.$emit('save', this.newCalendar);
       this.open = false;
     },
@@ -99,6 +102,8 @@ export default {
     value(v) {
       if (v) {
         this.newCalendar = { ...this.calendar };
+        this.newCalendar.shares = this.newCalendar.shares
+          .filter((id) => id !== this.$store.state.user.user.id);
       }
     },
   },

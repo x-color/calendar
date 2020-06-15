@@ -153,6 +153,9 @@ export default {
   mounted() {
     this.$refs.calendar.checkChange();
     this.getCalendars();
+    setInterval(() => {
+      this.getCalendars();
+    }, 60 * 1000);
   },
   methods: {
     ...mapMutations({
@@ -160,6 +163,7 @@ export default {
     }),
     ...mapActions({
       getCalendars: 'calendars/getCalendars',
+      addCalendar: 'calendars/addCalendar',
       addPlan: 'calendars/addPlan',
     }),
     openEditor(date) {
@@ -190,6 +194,7 @@ export default {
     },
     setToday() {
       this.focus = this.today;
+      console.log(this.$store.state);
     },
     prev() {
       this.$refs.calendar.prev();

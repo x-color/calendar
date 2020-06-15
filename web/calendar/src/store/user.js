@@ -1,3 +1,5 @@
+import fetchAPI from '@/utils/fetch';
+
 const state = () => ({
   user: {
     id: 'user01',
@@ -11,14 +13,29 @@ const getters = {
 };
 
 const actions = {
-  signin({ commit }, { username, callback }) {
-    commit('setUser', { id: 'user01', name: username, signin: true });
-    callback(true);
+  signin({ commit }, { username, password, callback }) {
+    const body = {
+      name: username,
+      password,
+    };
+    fetchAPI('/auth/signin', 'POST', JSON.stringify(body), false)
+      .then((obj) => {
+        commit('setUser', { id: obj.id, name: username, signin: true });
+        callback(true);
+      })
+      .catch(() => callback(false));
   },
-  signup(st, { callback }) {
-    callback(true);
+  signup(st, { username, password, callback }) {
+    const body = {
+      name: username,
+      password,
+    };
+    fetchAPI('/auth/signup', 'POST', JSON.stringify(body), false)
+      .then(() => callback(true))
+      .catch(() => callback(false));
   },
   signout({ commit }) {
+    fetchAPI('/auth/signout', 'POST');
     commit('setUser', { id: '', name: '', signin: false });
   },
 };

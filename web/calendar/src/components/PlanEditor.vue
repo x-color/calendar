@@ -77,7 +77,7 @@
                   <v-container>
                     <v-row>
                       <v-col
-                        v-for="(color, index) in ['red', 'green', 'blue', 'purple']"
+                        v-for="(color, index) in ['red', 'green', 'blue', 'yellow']"
                         :key="index"
                         cols="auto"
                         class="pa-0"
@@ -257,6 +257,7 @@ export default {
       if (this.newPlan.user_id === '') {
         this.newPlan.user_id = this.$store.state.user.user.id;
       }
+      this.newPlan.shares.unshift(this.newPlan.calendar_id);
       this.$emit('save', this.newPlan);
       this.$emit('input', false);
     },
@@ -264,32 +265,23 @@ export default {
   watch: {
     value(v) {
       if (v) {
-        if (this.plan) {
-          this.noChangeCal = this.plan.calendar_id !== '';
-          this.newPlan = { ...this.plan };
-          this.newPlan.calendar_id = this.getMyCalendars[0].id;
-
-          this.share_list = this.newPlan.shares.map((id) => this.getCalendarByID(id).name);
-          this.cal = this.getCalendarByID(this.newPlan.calendar_id);
+        this.noChangeCal = this.plan.calendar_id !== '';
+        this.newPlan = { ...this.plan };
+        if (this.plan.calendar_id) {
+          this.newPlan.shares = this.newPlan.shares.filter((id) => id !== this.plan.calendar_id);
         } else {
-          this.newPlan = {
-            id: '',
-            calendar_id: '',
-            user_id: '',
-            name: '',
-            memo: '',
-            color: 'red',
-            private: false,
-            shares: [],
-            start: this.timeList[0],
-            end: this.timeList[4],
-            allday: false,
-          };
-          this.cal = {
-            text: this.calendars[0].text,
-            value: this.calendars[0].value,
-          };
+          this.newPlan.calendar_id = this.getMyCalendars[0].id;
+          this.newPlan.color = this.getMyCalendars[0].color;
         }
+
+        this.share_list = this.newPlan.shares.map((id) => {
+          const cal = this.getCalendarByID(id);
+          return {
+            text: cal.name,
+            value: cal,
+          };
+        });
+        this.cal = this.getCalendarByID(this.newPlan.calendar_id);
       }
     },
   },
