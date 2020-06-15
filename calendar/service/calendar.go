@@ -41,7 +41,7 @@ func (s *Service) getCalendars(ctx context.Context, userID string) ([]model.Cale
 		plans := make([]model.Plan, len(pl))
 		for j, p := range pl {
 			plan := p.model()
-			if plan.Private {
+			if plan.Private && plan.UserID != userID {
 				plan, _ = maskPlan(plan, cal.ID)
 			}
 			plans[j] = plan
