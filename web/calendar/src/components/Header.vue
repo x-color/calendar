@@ -2,7 +2,11 @@
   <div>
     <v-app-bar color="primary" dense dark>
       <v-app-bar-nav-icon v-if="appMode" @click="$emit('input', !value)"></v-app-bar-nav-icon>
-      <v-toolbar-title v-else>Sample Calendar Application</v-toolbar-title>
+      <v-toolbar-title v-else>
+      <v-btn text @click="$router.push('/', () => {})">
+        Sample Calendar Application
+      </v-btn>
+      </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-menu v-if="$store.state.user.user.signin" left bottom>
         <template v-slot:activator="{ on }">

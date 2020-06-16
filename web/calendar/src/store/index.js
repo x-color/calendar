@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import createPersistedState from 'vuex-persistedstate';
 import calendars from '@/store/calendars';
 import user from '@/store/user';
 
@@ -10,4 +11,11 @@ export default new Vuex.Store({
     calendars,
     user,
   },
+  plugins: [
+    createPersistedState({
+      key: 'sample-calendar-application',
+      paths: ['user.user'],
+      storage: window.localStorage,
+    }),
+  ],
 });

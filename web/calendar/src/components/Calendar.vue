@@ -150,9 +150,14 @@ export default {
       });
     },
   },
-  mounted() {
+  async mounted() {
     this.$refs.calendar.checkChange();
-    this.getCalendars();
+    await this.getCalendars().catch((e) => {
+      if (e.message === 'AuthError') {
+        this.setUser({ signin: false });
+        this.$router.push('/', () => {});
+      }
+    });
     setInterval(() => {
       this.getCalendars();
     }, 60 * 1000);
@@ -160,6 +165,7 @@ export default {
   methods: {
     ...mapMutations({
       setFocusDate: 'calendars/setFocusDate',
+      setUser: 'user/setUser',
     }),
     ...mapActions({
       getCalendars: 'calendars/getCalendars',

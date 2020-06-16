@@ -18,7 +18,6 @@ export default function fetchAPI(url, method = 'GET', body = '', signin = true) 
   const prefix = '/api';
 
   return fetch(`${prefix}${url}`, options).catch((err) => {
-    console.error(`Request failed: ${err}`);
     throw new Error(`Request failed: ${err}`);
   }).then((response) => {
     if (response.ok) {
@@ -27,7 +26,9 @@ export default function fetchAPI(url, method = 'GET', body = '', signin = true) 
       }
       return response.json();
     }
-    console.error(`Request failed: ${response.status}`);
+    if (response.status === 401) {
+      throw new Error('AuthError');
+    }
     throw new Error(`Request failed: ${response.status}`);
   });
 }

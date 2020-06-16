@@ -104,8 +104,8 @@ const getters = {
 };
 
 const actions = {
-  getCalendars({ state: st, commit }) {
-    fetchAPI('/calendars')
+  async getCalendars({ state: st, commit }) {
+    await fetchAPI('/calendars')
       .then((obj) => {
         const calendars = obj.map((cal) => {
           const calendar = converter.calAPIModelToModel(cal);
@@ -117,20 +117,26 @@ const actions = {
         });
         commit('setCalendars', calendars);
       })
-      .catch(() => fetchAPI('/register', 'POST')
-        .then(() => {
-          const body = {
-            name: 'calendar',
-            color: 'red',
-          };
-          fetchAPI('/calendars', 'POST', JSON.stringify(body))
-            .then((resCal) => commit('addCalendar', converter.calAPIModelToModel(resCal)))
-            .then(() => fetchAPI('/calendars'))
-            .then((obj) => {
-              const calendars = obj.map((cal) => converter.calAPIModelToModel(cal));
-              commit('setCalendars', calendars);
-            });
-        }));
+      .catch((e) => {
+        if (e.message === 'AuthError') {
+          throw new Error('AuthError');
+        }
+
+        fetchAPI('/register', 'POST')
+          .then(() => {
+            const body = {
+              name: 'calendar',
+              color: 'red',
+            };
+            fetchAPI('/calendars', 'POST', JSON.stringify(body))
+              .then((resCal) => commit('addCalendar', converter.calAPIModelToModel(resCal)))
+              .then(() => fetchAPI('/calendars'))
+              .then((obj) => {
+                const calendars = obj.map((cal) => converter.calAPIModelToModel(cal));
+                commit('setCalendars', calendars);
+              });
+          });
+      });
   },
   addCalendar({ commit }, cal) {
     const body = {
