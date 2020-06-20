@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"os"
 
+	"github.com/go-redis/redis/v8"
+	_ "github.com/lib/pq"
 	"github.com/x-color/calendar/app/rest"
-	authInmem "github.com/x-color/calendar/auth/repogitory/inmem"
+	authStore "github.com/x-color/calendar/auth/repogitory/store"
 	as "github.com/x-color/calendar/auth/service"
 	calInmem "github.com/x-color/calendar/calendar/repogitory/inmem"
 	cs "github.com/x-color/calendar/calendar/service"
@@ -12,8 +17,29 @@ import (
 )
 
 func main() {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+	defer rdb.Close()
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		panic(err)
+	}
+
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		"localhost", 5432, "testuser", "password", "calendar")
+	pdb, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer pdb.Close()
+	if err = pdb.Ping(); err != nil {
+		panic(err)
+	}
+
 	l := logging.NewLogger(os.Stdout)
-	ar := authInmem.NewRepogitory()
+	ar := authStore.NewRepogitory(pdb, rdb)
 	cr := calInmem.NewRepogitory()
 	a := as.NewService(&ar, &l)
 	c := cs.NewService(&cr, &l)
