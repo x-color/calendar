@@ -108,18 +108,6 @@ func (s *Service) signin(ctx context.Context, name, password string) (model.Sess
 		)
 	}
 
-	oldSession, err := s.repo.Session().FindByUserID(ctx, user.ID)
-	if err == nil {
-		err = s.repo.Session().Delete(ctx, oldSession.ID)
-		if err != nil {
-			s.log.Error(err.Error())
-		} else {
-			s.log.Info(fmt.Sprintf("use already existed session(%v)", oldSession.ID))
-		}
-	} else if !errors.Is(err, cerror.ErrNotFound) {
-		return model.Session{}, err
-	}
-
 	session := model.NewSession(user.ID, time.Now().AddDate(0, 1, 0))
 	err = s.repo.Session().Create(ctx, newSessionData(session))
 	if err != nil {

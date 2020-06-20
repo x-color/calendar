@@ -30,22 +30,6 @@ func (r *sessionRepo) Find(ctx context.Context, id string) (service.SessionData,
 	)
 }
 
-func (r *sessionRepo) FindByUserID(ctx context.Context, userID string) (service.SessionData, error) {
-	r.m.RLock()
-	defer r.m.RUnlock()
-
-	for _, s := range r.sessions {
-		if userID == s.UserID {
-			return s, nil
-		}
-	}
-
-	return service.SessionData{}, cerror.NewNotFoundError(
-		nil,
-		fmt.Sprintf("not found user(%v) session", userID),
-	)
-}
-
 func (r *sessionRepo) Create(ctx context.Context, session service.SessionData) error {
 	r.m.RLock()
 	for _, s := range r.sessions {
