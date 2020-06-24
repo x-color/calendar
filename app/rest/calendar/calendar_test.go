@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -296,6 +297,32 @@ func TestNewCalendarRouter_GetCalendars(t *testing.T) {
 			}
 			expected := tc.res
 
+			sort.Slice(actual, func(i, j int) bool {
+				return actual[i].ID < actual[j].ID
+			})
+			sort.Slice(expected, func(i, j int) bool {
+				return expected[i].ID < expected[j].ID
+			})
+			for i := range actual {
+				sort.Slice(actual[i].Plans, func(j, k int) bool {
+					return actual[i].Plans[j].ID < actual[i].Plans[k].ID
+				})
+				for j := range actual[i].Plans {
+					sort.Slice(actual[i].Plans[j].Shares, func(k, l int) bool {
+						return actual[i].Plans[j].Shares[k] < actual[i].Plans[j].Shares[l]
+					})
+				}
+			}
+			for i := range expected {
+				sort.Slice(expected[i].Plans, func(j, k int) bool {
+					return expected[i].Plans[j].ID < expected[i].Plans[k].ID
+				})
+				for j := range expected[i].Plans {
+					sort.Slice(expected[i].Plans[j].Shares, func(k, l int) bool {
+						return expected[i].Plans[j].Shares[k] < expected[i].Plans[j].Shares[l]
+					})
+				}
+			}
 			if d := cmp.Diff(expected, actual); d != "" {
 				t.Errorf("invalid response body: \n%v", d)
 			}
@@ -382,11 +409,13 @@ func TestNewCalendarRouter_MakeCalendar(t *testing.T) {
 func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)
-	otherID := uuid.New().String()
+	otherID, _ := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
 	calendarID := uuid.New().String()
 	otherCalID := uuid.New().String()
+	sharedCalID := uuid.New().String()
 	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{otherID})
 	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     calendarID,
 		Name:   "My plans",
@@ -396,6 +425,13 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 	})
 	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
 		ID:     otherCalID,
+		Name:   "Work plans",
+		UserID: otherID,
+		Color:  "yellow",
+		Shares: []string{otherID},
+	})
+	calRepo.Calendar().Create(context.Background(), cs.CalendarData{
+		ID:     sharedCalID,
 		Name:   "Work plans",
 		UserID: otherID,
 		Color:  "yellow",
@@ -433,15 +469,9 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 			code:   http.StatusNoContent,
 		},
 		{
-			name:   "second remove my calendar",
+			name:   "remove shared calendar",
 			cookie: &cookie,
-			calID:  calendarID,
-			code:   http.StatusNotFound,
-		},
-		{
-			name:   "remove other's calendar",
-			cookie: &cookie,
-			calID:  otherCalID,
+			calID:  sharedCalID,
 			code:   http.StatusNoContent,
 		},
 		{
@@ -471,7 +501,7 @@ func TestNewCalendarRouter_RemoveCalendar(t *testing.T) {
 func TestNewCalendarRouter_ChangeCalendar(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)
-	otherID := uuid.New().String()
+	otherID, _ := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
 	calRepo.User().Create(context.Background(), cs.UserData{userID})
 	calRepo.User().Create(context.Background(), cs.UserData{otherID})

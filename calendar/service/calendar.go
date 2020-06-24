@@ -111,6 +111,8 @@ func (s *Service) removeCalendar(ctx context.Context, userID, id string) error {
 		)
 	}
 
+	fmt.Printf("[DEBUG] %v %v\n", userID, id)
+
 	cal, err := s.repo.Calendar().Find(ctx, id)
 	if err != nil {
 		return err

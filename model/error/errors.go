@@ -14,7 +14,7 @@ type invalidContentError struct {
 }
 
 func (e invalidContentError) Error() string {
-	return fmt.Sprintf("InvalidContentError: %v", e.message)
+	return fmt.Sprintf("InvalidContentError: %v\n  %v", e.message, e.inner)
 }
 
 func (e invalidContentError) Unwrap() error {
@@ -44,7 +44,7 @@ type notFoundError struct {
 }
 
 func (e notFoundError) Error() string {
-	return fmt.Sprintf("NotFoundError: %v", e.message)
+	return fmt.Sprintf("NotFoundError: %v\n  %v", e.message, e.inner)
 }
 
 func (e notFoundError) Unwrap() error {
@@ -74,7 +74,7 @@ type duplicationError struct {
 }
 
 func (e duplicationError) Error() string {
-	return fmt.Sprintf("DuplicationError: %v", e.message)
+	return fmt.Sprintf("DuplicationError: %v\n  %v", e.message, e.inner)
 }
 
 func (e duplicationError) Unwrap() error {
@@ -104,7 +104,7 @@ type internalError struct {
 }
 
 func (e internalError) Error() string {
-	return fmt.Sprintf("InternalError: %v", e.message)
+	return fmt.Sprintf("InternalError: %v\n  %v", e.message, e.inner)
 }
 
 func (e internalError) Unwrap() error {
@@ -134,7 +134,7 @@ type authorizationError struct {
 }
 
 func (e authorizationError) Error() string {
-	return fmt.Sprintf("AuthorizationError: %v", e.message)
+	return fmt.Sprintf("AuthorizationError: %v\n  %v", e.message, e.inner)
 }
 
 func (e authorizationError) Unwrap() error {

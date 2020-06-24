@@ -11,7 +11,7 @@ import (
 	"github.com/x-color/calendar/app/rest"
 	authStore "github.com/x-color/calendar/auth/repogitory/store"
 	as "github.com/x-color/calendar/auth/service"
-	calInmem "github.com/x-color/calendar/calendar/repogitory/inmem"
+	calStore "github.com/x-color/calendar/calendar/repogitory/store"
 	cs "github.com/x-color/calendar/calendar/service"
 	"github.com/x-color/calendar/logging"
 )
@@ -40,7 +40,7 @@ func main() {
 
 	l := logging.NewLogger(os.Stdout)
 	ar := authStore.NewRepogitory(pdb, rdb)
-	cr := calInmem.NewRepogitory()
+	cr := calStore.NewRepogitory(pdb)
 	a := as.NewService(&ar, &l)
 	c := cs.NewService(&cr, &l)
 	rest.StartServer(a, c, &l)

@@ -14,7 +14,7 @@ import (
 	_ "github.com/lib/pq"
 	ar "github.com/x-color/calendar/auth/repogitory/store"
 	as "github.com/x-color/calendar/auth/service"
-	cr "github.com/x-color/calendar/calendar/repogitory/inmem"
+	cr "github.com/x-color/calendar/calendar/repogitory/store"
 	cs "github.com/x-color/calendar/calendar/service"
 	"github.com/x-color/calendar/logging"
 )
@@ -54,26 +54,48 @@ func connectDB() (*sql.DB, *redis.Client) {
 		}
 	}
 
-	_, err := pdb.Exec("DELETE FROM auth.users")
-	if err != nil {
-		panic(err)
-	}
-
 	return pdb, rdb
 }
 
 func NewAuthRepo() as.Repogitory {
-	r := ar.NewRepogitory(connectDB())
+	pdb, rdb := connectDB()
+	_, err := pdb.Exec("DELETE FROM auth.users")
+	if err != nil {
+		panic(err)
+	}
+	r := ar.NewRepogitory(pdb, rdb)
 	return &r
 }
 
 func NewCalRepo() cs.Repogitory {
-	r := cr.NewRepogitory()
+	db, _ := connectDB()
+
+	_, err := pdb.Exec("DELETE FROM calendar.plan_shares")
+	if err != nil {
+		panic(err)
+	}
+	_, err = pdb.Exec("DELETE FROM calendar.plans")
+	if err != nil {
+		panic(err)
+	}
+	_, err = pdb.Exec("DELETE FROM calendar.calendar_shares")
+	if err != nil {
+		panic(err)
+	}
+	_, err = pdb.Exec("DELETE FROM calendar.calendars")
+	if err != nil {
+		panic(err)
+	}
+	_, err = pdb.Exec("DELETE FROM calendar.users")
+	if err != nil {
+		panic(err)
+	}
+
+	r := cr.NewRepogitory(db)
 	return &r
 }
 
 func NewLogger() logging.Logger {
-	// l := logging.NewLogger(os.Stdout)
 	l := logging.NewLogger(ioutil.Discard)
 	return &l
 }
@@ -85,6 +107,10 @@ func DummyCalService() cs.Service {
 func MakeSession(authRepo as.Repogitory) (string, string) {
 	userID := uuid.New().String()
 	sessionID := uuid.New().String()
+	authRepo.User().Create(context.Background(), as.UserData{
+		ID:   userID,
+		Name: "Alice",
+	})
 	authRepo.Session().Create(context.Background(), as.SessionData{
 		ID:      sessionID,
 		UserID:  userID,

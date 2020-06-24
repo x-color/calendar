@@ -319,9 +319,10 @@ func TestNewPlanRouter_UserRegistrationChecker(t *testing.T) {
 func TestNewPlanRouter_Shedule(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)
-	otherID := uuid.New().String()
+	otherID, _ := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
 	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{otherID})
 	cal := makeCalendar(calRepo, userID)
 	otherCal := makeCalendar(calRepo, otherID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)
@@ -553,9 +554,10 @@ func TestNewPlanRouter_Shedule(t *testing.T) {
 func TestNewPlanRouter_Unshedule(t *testing.T) {
 	authRepo := testutils.NewAuthRepo()
 	userID, sessionID := testutils.MakeSession(authRepo)
-	otherID := uuid.New().String()
+	otherID, _ := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
 	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{otherID})
 	cal := makeCalendar(calRepo, userID, otherID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)
 	otherCal := makeCalendar(calRepo, otherID)
@@ -657,6 +659,7 @@ func TestNewPlanRouter_Reschedule(t *testing.T) {
 	otherID, otherSessionID := testutils.MakeSession(authRepo)
 	calRepo := testutils.NewCalRepo()
 	calRepo.User().Create(context.Background(), cs.UserData{userID})
+	calRepo.User().Create(context.Background(), cs.UserData{otherID})
 	cal := makeCalendar(calRepo, userID, otherID)
 	sharedCal := makeCalendar(calRepo, otherID, userID)
 	otherCal := makeCalendar(calRepo, otherID)
@@ -760,7 +763,7 @@ func TestNewPlanRouter_Reschedule(t *testing.T) {
 			cookie: &http.Cookie{Name: "session_id", Value: otherSessionID},
 			planID: sharedPlan.ID,
 			body: map[string]interface{}{
-				"calendar_id": sharedCal.ID,
+				"calendar_id": cal.ID,
 				"name":        "renamed",
 				"memo":        "edited text",
 				"color":       "yellow",
