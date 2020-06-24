@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/x-color/calendar/auth/model"
@@ -31,7 +32,12 @@ func (s *Service) Signup(ctx context.Context, name, password string) (model.User
 	user, err := s.signup(ctx, name, password)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to sign up: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Sign up user(%v)", name))
 	}
@@ -78,7 +84,12 @@ func (s *Service) Signin(ctx context.Context, name, password string) (model.Sess
 	session, err := s.signin(ctx, name, password)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to sign in: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Sign in user(%v)", name))
 	}
@@ -124,7 +135,12 @@ func (s *Service) Signout(ctx context.Context, id string) error {
 	err := s.signout(ctx, id)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to sign out: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Sign out session(%v)", id))
 	}
@@ -153,7 +169,12 @@ func (s *Service) Authorize(ctx context.Context, id string) (string, error) {
 	userID, err := s.authorize(ctx, id)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to authorize: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Authorization user(%v)", userID))
 	}

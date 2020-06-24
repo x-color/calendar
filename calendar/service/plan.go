@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/x-color/calendar/calendar/model"
 	cctx "github.com/x-color/calendar/model/ctx"
@@ -19,7 +20,12 @@ func (s *Service) Schedule(ctx context.Context, userID string, planPram model.Pl
 
 	plan, err := s.schedule(ctx, planPram)
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to schedule plan: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Schedule plan(%v)", plan.ID))
 	}
@@ -94,7 +100,12 @@ func (s *Service) Unschedule(ctx context.Context, userID, calID, id string) erro
 
 	err := s.unschedule(ctx, userID, calID, id)
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to unschedule plan: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Unschedule plan(%v)", id))
 	}
@@ -157,7 +168,12 @@ func (s *Service) Reschedule(ctx context.Context, userID string, planPram model.
 
 	plan, err := s.reschedule(ctx, planPram)
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to reshcedule plan: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Reschedule plan(%v)", plan.ID))
 	}

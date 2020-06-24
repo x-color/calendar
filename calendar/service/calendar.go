@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/x-color/calendar/calendar/model"
 	cctx "github.com/x-color/calendar/model/ctx"
@@ -17,7 +19,12 @@ func (s *Service) GetCalendars(ctx context.Context, userID string) ([]model.Cale
 	cals, err := s.getCalendars(ctx, userID)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to get calendars: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Get calendars for user(%v)", userID))
 	}
@@ -59,7 +66,12 @@ func (s *Service) MakeCalendar(ctx context.Context, userID, name, color string) 
 	cal, err := s.makeCalendar(ctx, userID, name, color)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to make calendar: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Make calendar(%v)", cal.ID))
 	}
@@ -95,7 +107,12 @@ func (s *Service) RemoveCalendar(ctx context.Context, userID, id string) error {
 	err := s.removeCalendar(ctx, userID, id)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to remove calendar: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Remove calendar(%v)", id))
 	}
@@ -145,7 +162,12 @@ func (s *Service) ChangeCalendar(ctx context.Context, userID string, calPram mod
 	err := s.changeCalendar(ctx, userID, calPram)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to change calendar: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Change calendar(%v)", calPram.ID))
 	}

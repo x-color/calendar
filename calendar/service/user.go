@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/x-color/calendar/calendar/model"
 	cctx "github.com/x-color/calendar/model/ctx"
@@ -17,7 +18,12 @@ func (s *Service) RegisterUser(ctx context.Context, userID string) (model.User, 
 	user, err := s.registerUser(ctx, userID)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to register user: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Register user(%v)", user.ID))
 	}
@@ -49,7 +55,12 @@ func (s *Service) CheckRegistration(ctx context.Context, userID string) error {
 	err := s.checkRegistration(ctx, userID)
 
 	if err != nil {
-		s.log.Error(err.Error())
+		msg := strings.Replace(err.Error(), "\n", "%NL", -1)
+		if errors.Is(err, cerror.ErrInternal) {
+			s.log.Error(msg)
+		} else {
+			s.log.Info(fmt.Sprintf("Failed to check user registered: %v", msg))
+		}
 	} else {
 		s.log.Info(fmt.Sprintf("Registered user(%v)", userID))
 	}
