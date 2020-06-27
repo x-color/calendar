@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"log"
+	"net/url"
 	"os"
 
 	"github.com/go-redis/redis/v8"
@@ -17,25 +18,30 @@ import (
 )
 
 func main() {
+	redisURL, err := url.ParseRequestURI(os.Getenv("REDIS_URL"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	pwd, ok := redisURL.User.Password()
+	if !ok {
+		log.Fatalln("REDIS_URL does not have password")
+	}
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
+		Addr:     redisURL.Host,
+		Password: pwd,
 	})
 	defer rdb.Close()
 	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		"localhost", 5432, "testuser", "password", "calendar")
-	pdb, err := sql.Open("postgres", psqlInfo)
+	pdb, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	defer pdb.Close()
 	if err = pdb.Ping(); err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	l := logging.NewLogger(os.Stdout)
