@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-row class="fill-height">
+    <v-row>
       <v-col class="py-0">
         <v-sheet height="64">
           <v-toolbar flat color="white">
@@ -44,7 +44,7 @@
             </v-menu>
           </v-toolbar>
         </v-sheet>
-        <v-sheet height="600">
+        <v-sheet :height="calendarHeight">
           <v-calendar
             ref="calendar"
             v-model="focus"
@@ -112,6 +112,7 @@ export default {
       end: null,
       allday: false,
     },
+    calendarHeight: 600,
   }),
   computed: {
     ...mapGetters({
@@ -151,6 +152,7 @@ export default {
     },
   },
   async mounted() {
+    this.calendarHeight = window.innerHeight - 150;
     this.$refs.calendar.checkChange();
     await this.getCalendars().catch((e) => {
       if (e.message === 'AuthError') {
@@ -200,7 +202,6 @@ export default {
     },
     setToday() {
       this.focus = this.today;
-      console.log(this.$store.state);
     },
     prev() {
       this.$refs.calendar.prev();
