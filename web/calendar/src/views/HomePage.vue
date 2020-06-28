@@ -4,6 +4,10 @@
       <v-col cols="12" align="center">
         <h1>Sample Calendar Application</h1>
         <p>This application is created with Vue.js and Go.</p>
+        <p>
+          Source code is in repository (<a href="https://github.com/x-color/calendar">x-color/calendar</a>)
+          created by <a href="https://github.com/x-color">x-color</a>
+        </p>
       </v-col>
     </v-row>
 
