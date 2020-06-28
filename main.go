@@ -49,5 +49,5 @@ func main() {
 	cr := calStore.NewRepogitory(pdb)
 	a := as.NewService(&ar, &l)
 	c := cs.NewService(&cr, &l)
-	rest.StartServer(a, c, &l)
+	rest.StartServer(a, c, &l, os.Getenv("PORT"))
 }

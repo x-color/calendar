@@ -14,9 +14,9 @@ import (
 	"github.com/x-color/calendar/logging"
 )
 
-func StartServer(authService as.Service, calService cs.Service, l logging.Logger) {
+func StartServer(authService as.Service, calService cs.Service, l logging.Logger, port string) {
 	r := newRouter(authService, calService, l)
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":"+port, r)
 }
 
 func newRouter(authService as.Service, calService cs.Service, l logging.Logger) *mux.Router {

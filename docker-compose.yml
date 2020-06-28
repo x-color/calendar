@@ -36,6 +36,7 @@ services:
     ports:
       - 8080:8080
     environment:
+      PORT: 8080
       REDIS_URL: redis://h:@redis:6379
       DATABASE_URL: postgresql://testuser:password@postgresql:5432/calendar?sslmode=disable
     depends_on:
