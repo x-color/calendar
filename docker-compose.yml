@@ -25,12 +25,9 @@ services:
     hostname: localhost
 
   web-app:
-    image: alpine:latest
-    container_name: web-app
-    command: ./bin/calendar
-    working_dir: /app
-    volumes:
-      - .:/app
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
     environment:
@@ -42,7 +39,6 @@ services:
       - redis
     networks:
       - network
-    hostname: localhost
     tty: true 
 
 networks:
