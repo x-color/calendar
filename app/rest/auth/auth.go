@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/x-color/calendar/app/rest/middlewares"
 	"github.com/x-color/calendar/auth/service"
 	cerror "github.com/x-color/calendar/model/error"
 )
+
+var secure = len(os.Getenv("SSL_DISABLE")) == 0
 
 type userContent struct {
 	ID       string `json:"id"`
@@ -67,7 +70,7 @@ func (e *authEndpoint) SigninHandler(w http.ResponseWriter, r *http.Request) {
 		Value:    session.ID,
 		Expires:  session.Expires,
 		Path:     "/",
-		Secure:   false, // It should be 'true' if app is not sample.
+		Secure:   secure,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	}
