@@ -70,10 +70,13 @@ export default {
         required: (value) => !!value || 'Required.',
         min: (value) => value.length >= 8 || 'Min 8 characters',
         max: (value) => value.length <= 72 || 'Max 72 characters',
-        lower: (value) => value.match(/[a-z]+/) || 'At least 1 letter between lowercase [a-z]',
-        upper: (value) => value.match(/[A-Z]+/) || 'At least 1 letter between uppercase [A-Z]',
-        num: (value) => value.match(/[0-9]+/) || 'At least 1 number',
-        sign: (value) => value.match(/[!@#$%^&*_-]+/) || 'At least 1 characters from [!@#$%^&*_-]',
+        lower: (value) => value.match(/[a-z]+/) !== null
+          || 'At least 1 letter between lowercase [a-z]',
+        upper: (value) => value.match(/[A-Z]+/) !== null
+          || 'At least 1 letter between uppercase [A-Z]',
+        num: (value) => value.match(/[0-9]+/) !== null || 'At least 1 number',
+        sign: (value) => value.match(/[!@#$%^&*_-]+/) !== null
+          || 'At least 1 characters from [!@#$%^&*_-]',
       },
     };
   },
