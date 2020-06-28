@@ -6,8 +6,6 @@ services:
     container_name: postgresql
     ports:
       - 5432:5432
-    volumes:
-      - ./sql:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: password
