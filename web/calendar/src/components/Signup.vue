@@ -34,7 +34,7 @@
         <v-text-field
           v-model="password"
           :append-icon="show ? 'mdi-eye' : 'mdi-eye-off'"
-          :rules="[rules.required]"
+          :rules="varify"
           :type="show ? 'text' : 'password'"
           name="input-10-2"
           label="Password"
@@ -49,7 +49,7 @@
           color="primary"
           :disabled="!username || !password"
           @click="signupAndGoToPage"
-        >SINGUP</v-btn>
+        >SIGNUP</v-btn>
       </v-col>
     </v-row>
   </v-container>
@@ -59,7 +59,7 @@
 import { mapActions } from 'vuex';
 
 export default {
-  name: 'PageSignup',
+  name: 'Signup',
   data() {
     return {
       show: false,
@@ -68,8 +68,27 @@ export default {
       password: '',
       rules: {
         required: (value) => !!value || 'Required.',
+        min: (value) => value.length >= 8 || 'Min 8 characters',
+        max: (value) => value.length <= 72 || 'Max 72 characters',
+        lower: (value) => value.match(/[a-z]+/) || 'At least 1 letter between lowercase [a-z]',
+        upper: (value) => value.match(/[A-Z]+/) || 'At least 1 letter between uppercase [A-Z]',
+        num: (value) => value.match(/[0-9]+/) || 'At least 1 number',
+        sign: (value) => value.match(/[!@#$%^&*_-]+/) || 'At least 1 characters from [!@#$%^&*_-]',
       },
     };
+  },
+  computed: {
+    varify() {
+      return [
+        this.rules.required,
+        this.rules.min,
+        this.rules.max,
+        this.rules.lower,
+        this.rules.upper,
+        this.rules.num,
+        this.rules.sign,
+      ];
+    },
   },
   methods: {
     ...mapActions({
