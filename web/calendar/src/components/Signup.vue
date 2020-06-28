@@ -3,7 +3,7 @@
     <v-row justify="center">
       <v-col cols="12" align="center">
         <h1>Sample Calendar Application</h1>
-        <p>This application is created with Vue.js.</p>
+        <p>This application is created with Vue.js and Go.</p>
       </v-col>
     </v-row>
 
