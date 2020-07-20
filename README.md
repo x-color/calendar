@@ -2,8 +2,13 @@
 
 シンプルなカレンダーアプリケーション。
 
-Herokuにデプロイしている。
+デモアプリをHerokuにデプロイしている。
+
 https://sample-calendar.herokuapp.com
+
+開発時の工夫点や今後の改善点などは下記にまとめている。
+
+https://note.com/xcolor/n/nae153d17807d
 
 ## 機能
 
