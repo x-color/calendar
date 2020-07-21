@@ -1,4 +1,4 @@
-# Sample Calendar Application
+# Simple Calendar Application
 
 シンプルなカレンダーアプリケーション。
 
